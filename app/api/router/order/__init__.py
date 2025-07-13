@@ -1,7 +1,7 @@
 from typing import List, Literal, Optional
 
 import httpx
-from beanie import PydanticObjectId
+from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependency import login_required, required_role
@@ -10,6 +10,7 @@ from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
 from app.schema.order import (OrderResponse, OrderStatus, OrderUpdate,
                               PaymentMethod)
+from app.schema.service_unit import ServiceUnitResponse
 from app.service import orderService, paymentService, productService
 
 apiRouter = APIRouter(
@@ -58,6 +59,12 @@ async def get_orders(
         for item in order.items:
             product = await productService.find(item.get('product').id)
             item['product'] = product
+    for order in orders:
+        if isinstance(order.service_unit,Link):
+            order.service_unit = ServiceUnitResponse(
+                id = order.service_unit.to_dict().get('id'),
+                name = "Không xác định"
+            )
     return Response(data=orders)
 
 @apiRouter.get(

@@ -19,4 +19,4 @@ class ServiceUnitUpdate(BaseModel):
 class ServiceUnitResponse(BaseResponse):
     name: str
     qr_code: Optional[str] = None
-    area: AreaResponse
+    area: Optional[AreaResponse] = None

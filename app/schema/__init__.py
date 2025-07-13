@@ -11,8 +11,8 @@ class BaseResponse(BaseModel):
         from_attributes=True,
     )
     id: Optional[str] = Field(alias="_id")
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    created_at: Optional[datetime] = None 
+    updated_at: Optional[datetime] = None
 
     @field_validator("id", mode="before")
     @classmethod
