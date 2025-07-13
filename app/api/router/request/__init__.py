@@ -156,7 +156,9 @@ async def process_request(id:PydanticObjectId,req:Request):
     request = await requestService.find(id)
     if request is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
-    if req.state.user_scope != request.business.to_dict().get("id") or request.branch.to_dict().get("id") != req.state.user_branch:
+    if req.state.user_scope != request.business.to_dict().get("id"):
+        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
+    if req.state.user_branch is not None and request.branch.to_dict().get("id") != req.state.user_branch:
         raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
     user = await userService.find(req.state.user_id)
     if request.status == RequestStatus.COMPLETED or (request.status != RequestStatus.WAITING and request.staff.to_dict().get("id") != str(user.id)):
