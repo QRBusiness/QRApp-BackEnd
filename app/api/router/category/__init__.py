@@ -115,6 +115,9 @@ async def put_sub_category(id:PydanticObjectId,data:SubCategoryUpdate,request: R
     name="Xem một phân loại",
     status_code=200,
     response_model=Response[FullCategoryResponse],
+    dependencies=[
+        Depends(required_permissions(permissions=["view.subcategory"]))
+    ]
 )
 async def view_category(id: PydanticObjectId, request: Request):
     category = await categoryService.find_one(
@@ -140,6 +143,9 @@ async def view_category(id: PydanticObjectId, request: Request):
     name="Chỉnh sửa phân loại",
     status_code=200,
     response_model=Response[CategoryResponse],
+    dependencies=[
+        Depends(required_permissions(permissions=["update.category"]))
+    ]
 )
 async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Request):
     category = await categoryService.find_one(
@@ -159,6 +165,9 @@ async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Requ
     name="Xóa phân loại",
     status_code=200,
     response_model=Response[str],
+    dependencies=[
+        Depends(required_permissions(permissions=["delete.category"]))
+    ]
 )
 async def delete_category(id: PydanticObjectId,request: Request):
     category = await categoryService.find_one(
@@ -178,6 +187,9 @@ async def delete_category(id: PydanticObjectId,request: Request):
     name="Phân loại chi tiết",
     status_code=201,
     response_model=Response[SubCategoryResponse],
+    dependencies=[
+        Depends(required_permissions(permissions=["create.subcategory"]))
+    ]
 )
 async def post_subcategory(
     id: PydanticObjectId, data: SubCategoryCreate, request: Request
@@ -200,6 +212,9 @@ async def post_subcategory(
     name="Xóa phân loại chi tiết",
     status_code=200,
     response_model=Response[str],
+    dependencies=[
+        Depends(required_permissions(permissions=["delete.subcategory"]))
+    ]  
 )
 async def delete_subcategory(
     id: PydanticObjectId, request: Request

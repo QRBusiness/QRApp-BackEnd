@@ -3,7 +3,8 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import (login_required, required_permissions,
+                                required_role)
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
 from app.db import QRCode
@@ -24,6 +25,11 @@ apiRouter = APIRouter(
     path="",
     name="Xem đơn vị dịch vụ",
     response_model=Response[List[ServiceUnitResponse]],
+    dependencies=[
+        Depends(required_permissions(permissions=[
+            "view.serviceunit"
+        ]))
+    ]
 )
 async def get_service(
     request: Request,
@@ -49,6 +55,11 @@ async def get_service(
     path="",
     name="Tạo đơn vị dịch vụ",
     response_model=Response[ServiceUnitResponse],
+    dependencies=[
+        Depends(required_permissions(permissions=[
+            "create.serviceunit"
+        ]))
+    ]
 )
 async def post_service(
     request: Request,
@@ -85,6 +96,11 @@ async def post_service(
     path="/{id}",
     name="Cập nhật đơn vị dịch vụ",
     response_model=Response[ServiceUnitResponse],
+    dependencies=[
+        Depends(required_permissions(permissions=[
+            "update.serviceunit"
+        ]))
+    ]
 )
 async def put_service(id: PydanticObjectId, data: ServiceUnitUpdate, request: Request):
     service_unit = await unitService.find(id)
@@ -124,6 +140,11 @@ async def post_qrcode(id: PydanticObjectId, qr_code: UploadFile = File(...)):
     path="/{id}",
     name="Xóa đơn vị dịch vụ",
     response_model=Response,
+    dependencies=[
+        Depends(required_permissions(permissions=[
+            "delete.serviceunit"
+        ]))
+    ]
 )
 async def delete_service(id: PydanticObjectId, request: Request):
     service_unit = await unitService.find(id)
