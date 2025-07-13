@@ -25,7 +25,7 @@ class AreaResponse(BaseResponse):
     name: str
     description: Optional[str] = Field(None)
     image_url: Optional[str] = Field(None)
-    branch: BranchResponse
+    branch: Optional[BranchResponse] = Field(None)
 
 
 class FullAreaResponse(BaseResponse):

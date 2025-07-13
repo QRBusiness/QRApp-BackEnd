@@ -13,6 +13,8 @@ from app.core.config import settings
 from app.core.decorator import limiter
 from app.db import QRCode
 from app.models.request import RequestType
+from app.schema.area import AreaResponse
+from app.schema.branch import BranchResponse
 from app.schema.order import ExtenOrderCreate, OrderStatus
 from app.schema.request import (MinimumResquestResponse, RequestCreate,
                                 RequestStatus, RequestUpdate, ResquestResponse)
@@ -131,6 +133,16 @@ async def get_requests(
             request.service_unit = ServiceUnitResponse(
                 id = request.service_unit.to_dict().get('id'),
                 name = "Không xác định"
+            )
+        if isinstance(request.area,Link):
+            request.area = AreaResponse(
+                id = request.area.to_dict().get('id'),
+                name = "Không xác định",
+                branch = BranchResponse(
+                    id = request.branch.to_dict().get("id"),
+                    name = "Không xác định",
+                    address = "Không xác định"
+                ) if isinstance(request.branch,Link) else request.branch
             )
     return Response(data=requests)
 
