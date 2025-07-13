@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from beanie import PydanticObjectId
+from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from app.api.dependency import login_required, required_role
@@ -16,6 +16,7 @@ from app.models.request import RequestType
 from app.schema.order import ExtenOrderCreate, OrderStatus
 from app.schema.request import (MinimumResquestResponse, RequestCreate,
                                 RequestStatus, RequestUpdate, ResquestResponse)
+from app.schema.service_unit import ServiceUnitResponse
 from app.service import (areaService, businessService, extendOrderService,
                          planService, productService, requestService,
                          unitService, userService)
@@ -121,11 +122,16 @@ async def get_requests(
         conditions['type'] = type
     requests = await requestService.find_many(
         conditions=conditions,
-        projection_model=ResquestResponse,
         fetch_links=True,
         skip=(page - 1) * limit, 
         limit=limit
     )
+    for request in requests:
+        if isinstance(request.service_unit,Link):
+            request.service_unit = ServiceUnitResponse(
+                id = request.service_unit.to_dict().get('id'),
+                name = "Không xác định"
+            )
     return Response(data=requests)
 
 @apiRouter.post(
