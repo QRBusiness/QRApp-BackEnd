@@ -61,16 +61,20 @@ async def post_service(
         raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực")
     if PydanticObjectId(request.state.user_scope) != area.business.to_ref().id:
         raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
-    contents = await qr_code.read()
-    object_name = QRCode.upload(
-        object=contents,
-        object_name=f"{request.state.user_id}_{qr_code.filename}",
-        content_type=qr_code.content_type,
-    )
+    if qr_code:
+        contents = await qr_code.read()
+        object_name = QRCode.upload(
+            object=contents,
+            object_name=f"{request.state.user_id}_{qr_code.filename}",
+            content_type=qr_code.content_type,
+        )
+        qr_link = QRCode.get_url(object_name)
+    else:
+        qr_link = None
     data = await unitService.insert({
         "name": name,
         "area": area,
-        "qr_code": QRCode.get_url(object_name)
+        "qr_code": qr_link
     })
     await data.fetch_link('area')
     await data.area.fetch_link("branch")
