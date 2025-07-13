@@ -34,8 +34,8 @@ class Business(Base):
         default=True, description="Trạng thái hoạt động (True: đang hoạt động)"
     )
     expired_at: datetime = Field(
-        default_factory=lambda: datetime.now() + timedelta(minutes=1),
-        description="Thời điểm hết hạn (mặc định là hiện tại + 15 phút)",
+        default_factory=lambda: datetime.now() + timedelta(days = 14),
+        description="Thời gian thử 14 ngày/2 tuần",
     )
     logo: Optional[str] = Field(default=None,description="Logo doanh nghiệp")
 
