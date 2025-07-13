@@ -1,6 +1,6 @@
 from typing import Optional
 
-from beanie import Link
+from beanie import Delete, Link, after_event
 from pydantic import Field
 
 from app.models.base import Base
@@ -19,3 +19,13 @@ class Area(Base):
     )
     branch: Link[Branch] = Field(..., description="Chi nhánh sở hữu")
     business: Link[Business] = Field(..., description="Doanh nghiệp sở hữu khu vực này")
+
+    @after_event(Delete)
+    async def delete_area(self):
+        from app.service import unitService
+
+        await unitService.delete_many(
+            conditions={
+                "area.$id": self.id,
+            }
+        )    
