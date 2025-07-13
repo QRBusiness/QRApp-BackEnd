@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from beanie import PydanticObjectId
@@ -12,7 +13,7 @@ from app.core.config import settings
 from app.core.decorator import limiter
 from app.db import QRCode
 from app.models.request import RequestType
-from app.schema.order import ExtenOrderCreate
+from app.schema.order import ExtenOrderCreate, OrderStatus
 from app.schema.request import (MinimumResquestResponse, RequestCreate,
                                 RequestStatus, RequestUpdate, ResquestResponse)
 from app.service import (areaService, businessService, extendOrderService,
@@ -37,6 +38,32 @@ async def get_extends():
     orders = await extendOrderService.find_many(conditions={})
     return Response(data=orders)
 
+@apiRouter.put(
+    path = "/extend/{id}",
+    dependencies=[
+        Depends(login_required),
+        Depends(required_role(role=["Admin"]))
+    ],
+    response_model=Response
+)
+async def put_extend(id:PydanticObjectId):
+    order = await extendOrderService.find(id)
+    if order is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+    if order.status == OrderStatus.PAID:
+        raise HTTP_400_BAD_REQUEST("Đơn hàng đã được xử lí")
+    await order.fetch_all_links()
+    await extendOrderService.update(id,data={"status":OrderStatus.PAID})
+    await businessService.update(
+        id = order.business.to_ref().id,
+        data = {
+            "expired_at": max(order.business.expired_at,datetime.now()) + timedelta(days=order.plan.period),
+        }
+    )
+    return Response(data=True)
+    
+
+
 @apiRouter.post(
     path = "/extend",
     dependencies=[
@@ -48,7 +75,7 @@ async def get_extends():
 async def request_extend(
     request:Request,
     plan: PydanticObjectId = Form(...,description="Gói đăng kí"),
-    image: UploadFile = File(..., description="Ảnh minh chứng gia hạn"),
+    image: UploadFile = File(..., description="Ảnh thanh toán"),
 ):
     plan = await planService.find(plan)
     if plan is None:
