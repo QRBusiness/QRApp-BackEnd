@@ -44,3 +44,5 @@ class ExtendOrder(Base):
     payment_method: PaymentMethod = Field(default=PaymentMethod.BANK)
     status: OrderStatus = Field(default=OrderStatus.UNPAID)
 
+    __action__: List[str] = ["view","update"]
+

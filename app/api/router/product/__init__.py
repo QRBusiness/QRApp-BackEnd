@@ -132,9 +132,6 @@ private_apiRouter = APIRouter(
     dependencies=[
         Depends(login_required),
         Depends(required_role(role=["BusinessOwner","Staff"])),
-        Depends(required_permissions(permissions=[
-            "view.product"
-        ]))
     ],
 )
 
@@ -144,6 +141,9 @@ private_apiRouter = APIRouter(
     name="Xem danh sách sản phẩm",
     status_code=200,
     response_model=Response[List[FullProductResponse]],
+    dependencies=Depends(required_permissions(
+        permissions=["view.product"]
+    ))
 )
 async def get_product(
     request: Request,
@@ -160,7 +160,13 @@ async def get_product(
 
 
 @private_apiRouter.post(
-    path="", name="Sản phẩm", status_code=201, response_model=Response[ProductResponse]
+    path="", 
+    name="Sản phẩm", 
+    status_code=201, 
+    response_model=Response[ProductResponse],
+    dependencies=Depends(required_permissions(
+        permissions=["create.product"]
+    ))
 )
 async def post_product(data: ProductCreate, request: Request):
     subcategory = await subcategoryService.find(data.sub_category)
@@ -188,6 +194,10 @@ async def post_product(data: ProductCreate, request: Request):
     name="Thêm ảnh cho sản phẩm",
     status_code=200,
     response_model=Response[ProductResponse],
+    dependencies=Depends(required_permissions(
+        permissions=["update.product"]
+    ))
+    
 )
 async def post_image_product(
     request:Request,
@@ -215,6 +225,9 @@ async def post_image_product(
     name="Sửa thông tin sản phẩm",
     status_code=201,
     response_model=Response[ProductResponse],
+    dependencies=Depends(required_permissions(
+        permissions=["update.product"]
+    ))
 )
 async def put_product(id: PydanticObjectId, data: ProductUpdate, request: Request):
     product = await productService.find(id)
@@ -227,7 +240,13 @@ async def put_product(id: PydanticObjectId, data: ProductUpdate, request: Reques
 
 
 @private_apiRouter.delete(
-    path="/{id}", name="Xóa sản phẩm", status_code=200, response_model=Response
+    path="/{id}", 
+    name="Xóa sản phẩm", 
+    status_code=200, 
+    response_model=Response,
+    dependencies=Depends(required_permissions(
+        permissions=["delete.product"]
+    ))
 )
 async def delete_product(id: PydanticObjectId, request: Request):
     product = await productService.find(id)
