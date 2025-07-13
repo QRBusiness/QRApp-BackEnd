@@ -73,9 +73,9 @@ class BusinessOwner(Auth):
 
 
 class Staff(Auth):
-    name: str
-    phone: str
-    address: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     branch: PydanticObjectId
 
     @computed_field(return_type=str)
