@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import List,Literal, Optional
 
 import httpx
 from beanie import Link, PydanticObjectId
@@ -26,7 +26,7 @@ apiRouter = APIRouter(
 
 @apiRouter.get(
     path = "",
-    response_model=Response,#[List[OrderResponse]],
+    response_model=Response[List[OrderResponse]],
     name = "Danh sách đơn",
 )
 async def get_orders(
@@ -72,10 +72,16 @@ async def get_orders(
                 id = order.area.to_dict().get('id'),
                 name = "Không xác định",
                 branch = BranchResponse(
-                    id = "Không xác định",
+                    id = order.branch.to_dict().get('id'),
                     name = "Không xác định",
                     address = "Không xác định"
-                ),
+                ) if isinstance(order.branch,Link) else order.branch
+            )
+        if isinstance(order.branch,Link):
+            order.branch = BranchResponse(
+                id = order.branch.to_dict().get('id'),
+                name = "Không xác định",
+                address = "Không xác định"
             )
     return Response(data=orders)
 
