@@ -10,6 +10,7 @@ from app.common.api_response import Response
 from app.common.http_exception import (HTTP_400_BAD_REQUEST,
                                        HTTP_404_NOT_FOUND, HTTP_409_CONFLICT)
 from app.core.config import settings
+from app.db import Mongo
 from app.schema.branch import BranchCreate
 from app.schema.business import (BusinessCreate, BusinessResponse,
                                  BusinessUpdate, ExtendBusiness,
@@ -95,57 +96,63 @@ async def put_business(id: PydanticObjectId, data: BusinessUpdate):
     response_model=Response[FullUserResponse],
 )
 async def post_business(data: BusinessRegister):
-    type = await businessTypeService.find(data.business_type)
-    if type is None:
-        raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp không phù hợp")
-    if await businessService.find_one({"name": data.business_name}):
-        raise HTTP_409_CONFLICT("Tên doanh nghiệp đã được đăng kí")
-    if await userService.find_one(
-        {"username": data.username},
-    ):
-        raise HTTP_409_CONFLICT("Tên đăng nhập đã được đăng kí")
-    if data.business_tax_code:
-        if await businessService.find_one({"tax_code": data.business_tax_code}):
-            raise HTTP_409_CONFLICT("Mã số thuế đã được sử dụng")
-    business = BusinessCreate(
-        name=data.business_name,
-        address=data.business_address,
-        contact=data.business_contact,
-        business_type=type,
-        tax_code=data.business_tax_code,
-        owner=None,
-    )
-    owner = BusinessOwner(
-        username=data.username,
-        password=data.password,
-        name=data.owner_name,
-        phone=data.owner_contact,
-        address=data.owner_address,
-    )
-    business = await businessService.insert(business)
-    owner = await userService.insert(owner)
-    business = await businessService.update(
-        id=business.id,
-        data={
-            "owner": owner,
-        },
-    )
-    await userService.update(
-        id=owner.id,
-        data={
-            "business": business,
-        },
-    )
-    await branchService.insert(
-        BranchCreate(
-            name=business.name,
-            address=business.address,
-            contact=business.contact,
-            business=business,
+    async with businessService.transaction(Mongo.client) as session:
+        type = await businessTypeService.find(data.business_type,session)
+        if type is None:
+            raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp không phù hợp")
+        if await businessService.find_one({"name": data.business_name},session=session):
+            raise HTTP_409_CONFLICT("Tên doanh nghiệp đã được đăng kí")
+        if await userService.find_one({"username": data.username},):
+            raise HTTP_409_CONFLICT("Tên đăng nhập đã được đăng kí")
+        if data.business_tax_code:
+            if await businessService.find_one({"tax_code": data.business_tax_code},session=session):
+                raise HTTP_409_CONFLICT("Mã số thuế đã được sử dụng")
+        business = BusinessCreate(
+            name=data.business_name,
+            address=data.business_address,
+            contact=data.business_contact,
+            business_type=type,
+            tax_code=data.business_tax_code,
+            owner=None,
         )
-    )
-    user = await userService.find_one({"username": data.username})
-    await user.fetch_all_links()
+        owner = BusinessOwner(
+            username=data.username,
+            password=data.password,
+            name=data.owner_name,
+            phone=data.owner_contact,
+            address=data.owner_address,
+        )
+        business = await businessService.insert(business,session=session)
+        owner = await userService.insert(owner,session=session)
+        business = await businessService.update(
+            id=business.id,
+            data={
+                "owner": owner,
+            },
+            session=session
+        )
+        await userService.update(
+            id=owner.id,
+            data={
+                "business": business,
+            },
+            session=session,
+        )
+        await branchService.insert(
+            BranchCreate(
+                name=data.business_name,
+                address=data.business_address,
+                contact=data.business_contact,
+                business=business,
+            ),
+            session=session,
+        )
+        user = await userService.find_one(
+            {"username": data.username},
+            session=session,
+            fetch_links=True,
+            projection_model=FullUserResponse
+        )
     return Response(data=user)
 
 @apiRouter.post(

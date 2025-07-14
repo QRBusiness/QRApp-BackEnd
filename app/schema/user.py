@@ -62,9 +62,9 @@ class Administrator(Auth):
 
 
 class BusinessOwner(Auth):
-    name: str
-    phone: str
-    address: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
 
     @computed_field(return_type=str)
     @property
@@ -86,13 +86,13 @@ class Staff(Auth):
 
 class BusinessRegister(Auth):
     # owner
-    owner_name: str
-    owner_address: str
-    owner_contact: str
+    owner_name: Optional[str] = None
+    owner_address: Optional[str] = None
+    owner_contact: Optional[str] = None
     # business
     business_name: str
-    business_address: str
-    business_contact: str
+    business_address: Optional[str] = None
+    business_contact: Optional[str] = None
     business_type: PydanticObjectId
     business_tax_code: Optional[str] = Field(
         default=None, description="Business tax code"

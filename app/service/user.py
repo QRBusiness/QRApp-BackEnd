@@ -1,3 +1,5 @@
+from motor.motor_asyncio import AsyncIOMotorClientSession
+
 from app.models.user import User
 from app.schema.user import UserCreate, UserUpdate
 from app.service import permissionService
@@ -9,7 +11,7 @@ class UserService(Service[User, UserCreate, UserUpdate]):
     def __init__(self):
         super().__init__(User)
 
-    async def insert(self, data):
+    async def insert(self, data, session: AsyncIOMotorClientSession | None = None,):
         permissions = []
         if hasattr(data, "model_dump"):
             data = data.model_dump()
@@ -33,7 +35,7 @@ class UserService(Service[User, UserCreate, UserUpdate]):
                 )
             ]
         data["permissions"] = permissions
-        return await super().insert(data)
+        return await super().insert(data,session=session)
 
 
 userService = UserService()

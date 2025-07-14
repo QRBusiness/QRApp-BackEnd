@@ -63,8 +63,8 @@ class FullBusinessResponse(BaseResponse):
 
 class BusinessResponse(BaseResponse):
     name: str
-    address: str
-    contact: str
+    address: Optional[str] = None
+    contact: Optional[str] = None
     logo: Optional[str] = None
     tax_code: Optional[str] = None
     available: bool
