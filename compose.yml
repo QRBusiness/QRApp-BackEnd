@@ -9,8 +9,6 @@ services:
       TZ: Asia/Hong_Kong
     env_file:
         - .env
-    networks:
-        - QRNetwork
   nginx-backend:
     image: nginx:stable-alpine
     hostname: api.qrapp
