@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
     # Application
     APP_NAME: str = "QRApp Backend"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "0.0.0"
     PAGE_SIZE: int = 10
     # Secret
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1
