@@ -54,7 +54,7 @@ steps:
         - source .env
         - docket network create QRNetwork
         - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
-        - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up --force-recreate -d
+        - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
 
 kind: pipeline
 type: docker
