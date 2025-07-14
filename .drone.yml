@@ -52,7 +52,7 @@ steps:
         - mkdir -p ./logs
         - chown -R 1001:1001 ./logs
         - source .env
-        - docket network create QRNetwork
+        - docker network create QRNetwork || true
         - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
         - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
 
@@ -89,4 +89,4 @@ steps:
         - source .env
         - docker network create QRNetwork || true
         - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
-        - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up --force-recreate -d
+        - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
