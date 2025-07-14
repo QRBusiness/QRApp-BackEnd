@@ -8,7 +8,7 @@ from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
 from pydantic import ValidationError
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, PyMongoError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.common.api_message import KeyResponse, get_message
@@ -44,7 +44,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             error = KeyResponse.SERVER_ERROR
             message = get_message(KeyResponse.SERVER_ERROR)
             if isinstance(e,httpx.ConnectTimeout):
-                message = "Server đang quá tải. Thử lại sau"
+                message = "Hệ thống đang bận, vui lòng thử lại sau."
+            if isinstance(e,PyMongoError):
+                message = "Hệ thống đang bận, vui lòng thử lại sau."
             if isinstance(e, ResponseValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
