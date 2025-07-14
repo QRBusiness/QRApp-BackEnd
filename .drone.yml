@@ -53,5 +53,5 @@ steps:
         - chown -R 1001:1001 ./logs
         - source .env
         - docket network create QRNetwork
-        - docker compose -f docker-compose.backend.yml -p QRApp-Backend up --force-recreate -d
-        - docker compose -f docker-compose.monitor.yml -p QRApp-Monitor up --force-recreate -d
+        - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
+        - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up --force-recreate -d
