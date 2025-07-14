@@ -31,7 +31,6 @@ steps:
         - BUILDKIT_INLINE_CACHE=1
       tags:
         - latest
-        - ${DRONE_COMMIT_SHA}
   - name: Deploy to VPS
     image: ghcr.io/appleboy/drone-ssh
     settings:
