@@ -25,7 +25,7 @@ MessageResponse = {
         KeyResponse.INVALID_TOKEN: "Token không hợp lệ",
         KeyResponse.SESSION_EXPIRED: "Session không hợp lệ",
         KeyResponse.PERMISSION_DENIED: "Bạn không đủ quyền thực hiện hành động này",
-        KeyResponse.SERVER_ERROR: "Đã có lỗi xảy ra, vui lòng thử lại sau",
+        KeyResponse.SERVER_ERROR: "Hệ thống đang bận, vui lòng thử lại sau.",
     },
     "en": {
         KeyResponse.SUCCESS: "Success",

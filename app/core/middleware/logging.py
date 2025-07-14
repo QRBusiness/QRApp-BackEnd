@@ -46,7 +46,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             if isinstance(e,httpx.ConnectTimeout):
                 message = "Hệ thống đang bận, vui lòng thử lại sau."
             if isinstance(e,PyMongoError):
-                message = "Hệ thống đang bận, vui lòng thử lại sau."
+                message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
             if isinstance(e, ResponseValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
