@@ -47,3 +47,4 @@ steps:
         - docker network create QRNetwork || true
         - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
         - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
+        - docker system prune
