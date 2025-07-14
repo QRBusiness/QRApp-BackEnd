@@ -204,6 +204,7 @@ async def post_subcategory(
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
     data = data.model_dump()
     data["category"] = category
+    data['business'] = category.business
     sub_category = await subcategoryService.insert(data)
     return Response(data=sub_category)
 

@@ -28,6 +28,7 @@ class SubCategory(Base):
     name: str = Field(..., description="Phân loại chi tiết sản phẩm")
     description: Optional[str] = Field(default=None, description="Mô tả (Tùy chọn)")
     category: Link[Category] = Field(..., description="Phân loại chi tiết cho sản phẩm")
+    business: Link[Business] = Field(...,description="Thuộc doanh nghiệp")
 
     @after_event(Delete)
     async def delete_sub_category(self):
