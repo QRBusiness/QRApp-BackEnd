@@ -48,7 +48,8 @@ steps:
         - git clone https://github.com/QRBusiness/QRApp-BackEnd.git . || true
         - git restore . || true
         - git pull origin main || true
+        - mkdir -p ./logs
         - chown -R 1001:1001 ./logs
         - docker network create QRNetwork || true
         - source .env
-        - docker compose up -d
+        - docker compose up --force-recreate -d
