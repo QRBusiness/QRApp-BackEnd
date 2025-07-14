@@ -1,0 +1,54 @@
+services:
+  # --- MongoDB Exporter ---
+  mongodb_exporter:
+    image: percona/mongodb_exporter:0.40.0
+    container_name: mongodb_exporter
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: ${MONGO_URL}
+    restart: unless-stopped
+    networks:
+      - QRNetwork
+
+  # --- cAdvisor: monitor all Docker containers ---
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+    networks:
+      - QRNetwork
+
+  # --- Prometheus ---
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+    networks:
+      - QRNetwork
+
+  # --- Grafana ---
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "13000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - QRNetwork
+
+volumes:
+  grafana_data:
+
+networks:
+  QRNetwork:
+    external: true

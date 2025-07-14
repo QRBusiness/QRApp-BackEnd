@@ -1,0 +1,29 @@
+services:
+  qrapp-backend:
+    image: nhathuyd4hp/qrapp-backend:latest
+    container_name: api.qrapp
+    pull_policy: always
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      TZ: Asia/Hong_Kong
+    env_file:
+      - .env
+    networks:
+      - QRNetwork
+  nginx-backend:
+    image: nginx:stable-alpine
+    hostname: api.qrapp
+    container_name: nginx.api.qrapp
+    ports:
+      - 8000:80
+    volumes:
+    - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  depends_on:
+    - qrapp-backend
+  networks:
+    - QRNetwork
+
+networks:
+  QRNetwork:
+    external: true
