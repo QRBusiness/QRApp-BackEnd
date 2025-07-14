@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.0.0"
     PAGE_SIZE: int = 10
     # Secret
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 5
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 30
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60
     ACCESS_KEY: str
     REFRESH_KEY: str
     # FrontEnd

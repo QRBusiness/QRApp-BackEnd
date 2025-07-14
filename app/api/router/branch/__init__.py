@@ -98,7 +98,7 @@ async def update_branch(id: PydanticObjectId, data: BranchUpdate, request: Reque
 async def delete_branch(id: PydanticObjectId, request: Request):
     branch = await branchService.find(id)
     if branch is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy")
+        raise HTTP_404_NOT_FOUND("Không tìm thấy chi nhánh")
     branch_scope = branch.business.to_ref().id
     user_scope = PydanticObjectId(request.state.user_scope)
     if branch_scope != user_scope:

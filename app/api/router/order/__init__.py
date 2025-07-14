@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 import httpx
 from beanie import Link, PydanticObjectId
@@ -8,6 +8,8 @@ from app.api.dependency import login_required, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
+from app.schema.area import AreaResponse
+from app.schema.branch import BranchResponse
 from app.schema.order import (OrderResponse, OrderStatus, OrderUpdate,
                               PaymentMethod)
 from app.schema.service_unit import ServiceUnitResponse
@@ -24,8 +26,8 @@ apiRouter = APIRouter(
 
 @apiRouter.get(
     path = "",
-    response_model=Response[List[OrderResponse]],
-    name = "Danh sách đơn"
+    response_model=Response,#[List[OrderResponse]],
+    name = "Danh sách đơn",
 )
 async def get_orders(
     request: Request,
@@ -64,6 +66,16 @@ async def get_orders(
             order.service_unit = ServiceUnitResponse(
                 id = order.service_unit.to_dict().get('id'),
                 name = "Không xác định"
+            )
+        if isinstance(order.area,Link):
+            order.area = AreaResponse(
+                id = order.area.to_dict().get('id'),
+                name = "Không xác định",
+                branch = BranchResponse(
+                    id = "Không xác định",
+                    name = "Không xác định",
+                    address = "Không xác định"
+                ),
             )
     return Response(data=orders)
 
