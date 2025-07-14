@@ -50,6 +50,5 @@ steps:
         - git pull origin main || true
         - mkdir -p ./logs
         - chown -R 1001:1001 ./logs
-        - docker network create QRNetwork || true
         - source .env
         - docker compose up --force-recreate -d
