@@ -21,7 +21,17 @@ from app.service import businessService, categoryService, productService, subcat
 apiRouter = APIRouter(
     tags=["Category"],
     prefix="/categories",
-    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner", "Staff"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            required_role(
+                role=[
+                    "BusinessOwner",
+                    "Staff",
+                ],
+            ),
+        ),
+    ],
 )
 
 
