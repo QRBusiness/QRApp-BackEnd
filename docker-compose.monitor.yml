@@ -2,6 +2,11 @@ services:
   # --- cAdvisor: monitor all Docker containers ---
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
+    command:
+      - "--docker_only=true"
+      - "--housekeeping_interval=10s"
+      - "--event_storage_age_limit=1m"
+      - "--storage_duration=1m"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
