@@ -20,22 +20,28 @@ class UserService(Service[User, UserCreate, UserUpdate]):
         if hasattr(data, "model_dump"):
             data = data.model_dump()
         if data["role"] == "Admin":
-            permissions = await permissionService.find_many()
+            permissions = await permissionService.find_many(
+                conditions={
+                    "code": {"$regex": r"\.(businesstype|business|plan|group|user|extendorder|permission)$"},
+                },
+                session=session,
+            )
         if data["role"] == "BusinessOwner":
-            permissions = await permissionService.find_many({})
-            permissions = [
-                permission for permission in permissions if not permission.code.endswith((".businesstype", ".business"))
-            ]
+            permissions = await permissionService.find_many(
+                conditions={
+                    "code": {
+                        "$not": {"$regex": r"\.(businesstype|business|plan|permission)$"},
+                    },
+                },
+                session=session,
+            )
         if data["role"] == "Staff":
-            permissions = await permissionService.find_many({})
-            permissions = [
-                permission
-                for permission in permissions
-                if permission.code.startswith("view")
-                and permission.code.endswith(
-                    ("area", "branch", "order", "category", "subcategory", "serviceunit", "product")
-                )
-            ]
+            permissions = await permissionService.find_many(
+                conditions={
+                    "code": {"$regex": r"^view.*(area|branch|order|category|subcategory|serviceunit|product)$"}
+                },
+                session=session,
+            )
         data["permissions"] = permissions
         return await super().insert(data, session=session)
 
