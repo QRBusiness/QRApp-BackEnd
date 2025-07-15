@@ -18,7 +18,10 @@ apiRouter = APIRouter(
 
 
 @apiRouter.post(
-    path="", response_model=Response[PlanResponse], response_model_exclude={"data": "qr_code"}, name="Thêm gói gia hạn"
+    path="",
+    response_model=Response[PlanResponse],
+    response_model_exclude={"data": "qr_code"},
+    name="Thêm gói gia hạn",
 )
 async def post_plan(data: PlanCreate):
     payment = await paymentService.find_one(conditions={"business.$id": None})
@@ -30,7 +33,11 @@ async def post_plan(data: PlanCreate):
     return Response(data=plan)
 
 
-@apiRouter.put(path="/{id}", response_model=Response[PlanResponse], name="Chỉnh sửa gói gia hạn")
+@apiRouter.put(
+    path="/{id}",
+    response_model=Response[PlanResponse],
+    name="Chỉnh sửa gói gia hạn",
+)
 async def put_plan(id: PydanticObjectId, data: PlanUpdate):
     plan = await planService.find(id)
     if plan is None:

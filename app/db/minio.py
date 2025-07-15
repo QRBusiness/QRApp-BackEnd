@@ -71,7 +71,11 @@ class MinIO:
             raise ValueError("Error. Provide bytes or file-like object.")
 
         self.client.put_object(
-            bucket_name=self.bucket_name, object_name=object_name, data=data, length=size, content_type=content_type
+            bucket_name=self.bucket_name,
+            object_name=object_name,
+            data=data,
+            length=size,
+            content_type=content_type,
         )
         return object_name
 

@@ -17,7 +17,17 @@ from app.service import orderService, paymentService, productService
 apiRouter = APIRouter(
     prefix="/orders",
     tags=["Order"],
-    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner", "Staff"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            required_role(
+                role=[
+                    "BusinessOwner",
+                    "Staff",
+                ],
+            ),
+        ),
+    ],
 )
 
 

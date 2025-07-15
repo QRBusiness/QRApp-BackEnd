@@ -146,14 +146,23 @@ async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObje
 )
 async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
     if request.state.user_role != "Admin":
-        user = await userService.find_one({"_id": id, "role": "Staff"})
+        user = await userService.find_one(
+            {
+                "_id": id,
+                "role": "Staff",
+            }
+        )
         if user is None or user.business.to_ref().id != PydanticObjectId(request.state.user_scope):
             raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng trong doanh nghiệp của bạn")
     else:
-        user = await userService.find_one({"_id": id})
+        user = await userService.find_one(
+            {"_id": id},
+        )
         if user is None:
             raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng trong doanh nghiệp của bạn")
-    if user := await userService.find_one({"phone": data.phone}):
+    if user := await userService.find_one(
+        {"phone": data.phone},
+    ):
         if user.id != id:
             raise HTTP_409_CONFLICT("Số điện thoại đã được đăng kí")
     user = await userService.update(id, data)
@@ -166,7 +175,13 @@ async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
     name="Mở/Khóa người dùng/nhân viên",
     response_model=Response[UserResponse],
     dependencies=[
-        Depends(required_permissions(permissions=["update.user"])),
+        Depends(
+            required_permissions(
+                permissions=[
+                    "update.user",
+                ],
+            ),
+        ),
     ],
 )
 async def lock_unlock_user(id: PydanticObjectId, request: Request, task: BackgroundTasks):

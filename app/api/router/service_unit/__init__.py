@@ -74,6 +74,7 @@ async def post_service(
             "area": area,
             "qr_code": qr_link,
             "branch": area.branch,
+            "business": area.business,
         }
     )
     await data.fetch_link("area")
@@ -85,7 +86,13 @@ async def post_service(
     path="/{id}",
     name="Cập nhật đơn vị dịch vụ",
     response_model=Response[ServiceUnitResponse],
-    dependencies=[Depends(required_permissions(permissions=["update.serviceunit"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["update.serviceunit"],
+            ),
+        ),
+    ],
 )
 async def put_service(id: PydanticObjectId, data: ServiceUnitUpdate, request: Request):
     service_unit = await unitService.find(id)

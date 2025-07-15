@@ -57,7 +57,15 @@ async def post_business_type(data: BusinessTypeCreate | List[BusinessTypeCreate]
     path="/{id}",
     name="Sửa loại Doanh Nghiệp",
     response_model=Response[BusinessTypeResponse],
-    dependencies=[Depends(required_permissions(permissions=["update.businesstype"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=[
+                    "update.businesstype",
+                ],
+            ),
+        ),
+    ],
 )
 async def update_business_type(id: PydanticObjectId, data: BusinessTypeUpdate):
     if await businessTypeService.find(id) is None:
@@ -74,7 +82,14 @@ async def update_business_type(id: PydanticObjectId, data: BusinessTypeUpdate):
     path="/{id}",
     name="Xóa loại Doanh Nghiệp",
     deprecated=True,
-    dependencies=[Depends(required_permissions(permissions=["delete.businesstype"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["delete.businesstype"],
+            ),
+        ),
+    ],
+    response_model=Response[str],
 )
 async def delete_business_type(id: PydanticObjectId):
     type = await businessTypeService.find(id)
@@ -83,5 +98,5 @@ async def delete_business_type(id: PydanticObjectId):
     if await businessService.find_one({"business_type.$id": type.id}):
         raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp đang được sử dụng.")
     if not await businessTypeService.delete(id):
-        raise HTTP_400_BAD_REQUEST("Lỗi khi xóa")
-    return True
+        return Response(data="Xóa thất bại")
+    return Response(data="Xóa thành công")

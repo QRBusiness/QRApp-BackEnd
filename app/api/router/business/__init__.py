@@ -67,7 +67,15 @@ async def get_business(id: PydanticObjectId):
     path="/{id}",
     name="Sửa thông tin doanh nghiệp",
     status_code=200,
-    dependencies=[Depends(required_permissions(permissions=["update.business"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=[
+                    "update.business",
+                ]
+            ),
+        ),
+    ],
     response_model=Response[FullBusinessResponse],
 )
 async def put_business(id: PydanticObjectId, data: BusinessUpdate):
@@ -171,7 +179,15 @@ async def extend_business(
 @apiRouter.put(
     path="/active/{id}",
     name="Mở/Khóa doanh nghiệp",
-    dependencies=[Depends(required_permissions(permissions=["update.business"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=[
+                    "update.business",
+                ],
+            ),
+        ),
+    ],
     response_model=Response[BusinessResponse],
 )
 async def lock_unlock_business(id: PydanticObjectId):

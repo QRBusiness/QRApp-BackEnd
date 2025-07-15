@@ -3,7 +3,7 @@ from typing import Optional
 from beanie import Link
 from pydantic import Field
 
-from app.models import Area, Branch
+from app.models import Area, Branch, Business
 from app.models.base import Base
 
 
@@ -13,3 +13,4 @@ class ServiceUnit(Base):
     available: bool = Field(default=True)
     area: Link[Area] = Field(...)
     branch: Link[Branch] = Field(...)
+    business: Link[Business] = Field(...)

@@ -194,7 +194,14 @@ async def upload_avatar(
     response_model=Response[UserResponse],
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin", "BusinessOwner"])),
+        Depends(
+            required_role(
+                role=[
+                    "Admin",
+                    "BusinessOwner",
+                ]
+            ),
+        ),
     ],
 )
 async def put_me(data: UserUpdate, request: Request):

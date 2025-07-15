@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.db import Mongo
 from app.schema.area import AreaCreate, AreaResponse, AreaUpdate
-from app.service import areaService, branchService, businessService
+from app.service import areaService, branchService, businessService, unitService
 
 apiRouter = APIRouter(
     tags=["Area"],
@@ -94,11 +95,12 @@ async def put_area(id: PydanticObjectId, data: AreaUpdate, request: Request):
     dependencies=[Depends(required_permissions(permissions=["delete.area"]))],
 )
 async def delete_area(id: PydanticObjectId, request: Request):
-    area = await areaService.find(id)
-    if area is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực")
-    if area.business.to_ref().id != PydanticObjectId(request.state.user_scope):
-        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
-    if not await areaService.delete(id):
-        return Response(data="Xóa thất bại")
+    async with areaService.transaction(Mongo.client) as session:
+        area = await areaService.find(id, session)
+        if area is None:
+            raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
+        if area.business.to_ref().id != PydanticObjectId(request.state.user_scope):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
+        await areaService.delete(id)
+        await unitService.delete_many(conditions={"area.$id": id})
     return Response(data="Xóa thành công")

@@ -10,7 +10,7 @@ from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
 from app.core.decorator import limiter
-from app.db import QRCode
+from app.db import Mongo, QRCode
 from app.models.request import RequestType
 from app.schema.area import AreaResponse
 from app.schema.branch import BranchResponse
@@ -172,18 +172,26 @@ async def request(data: RequestCreate, request: Request):
 
 @apiRouter.post(path="/process/{id}", response_model=Response, dependencies=[Depends(login_required)])
 async def process_request(id: PydanticObjectId, req: Request):
-    request = await requestService.find(id)
-    if request is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
-    if req.state.user_scope != request.business.to_dict().get("id"):
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    if req.state.user_branch is not None and request.branch.to_dict().get("id") != req.state.user_branch:
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    user = await userService.find(req.state.user_id)
-    if request.status == RequestStatus.COMPLETED or (
-        request.status != RequestStatus.WAITING and request.staff.to_dict().get("id") != str(user.id)
-    ):
-        await manager.broadcast(message="Yêu cầu đã được xử lí", user_ids=[PydanticObjectId(req.state.user_id)])
-        return Response(data=False)
-    await requestService.update(id, RequestUpdate(status=request.status.next(), staff=user.to_ref()))
+    async with areaService.transaction(Mongo.client) as session:
+        request = await requestService.find(id, session=session)
+        if request is None:
+            raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
+        if req.state.user_scope != request.business.to_dict().get("id"):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
+        if req.state.user_branch is not None and request.branch.to_dict().get("id") != req.state.user_branch:
+            raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
+        user = await userService.find(req.state.user_id, session=session)
+        if request.status == RequestStatus.COMPLETED or (
+            request.status != RequestStatus.WAITING and request.staff.to_dict().get("id") != str(user.id)
+        ):
+            await manager.broadcast(message="Yêu cầu đã được xử lí", user_ids=[PydanticObjectId(req.state.user_id)])
+            return Response(data=False)
+        await requestService.update(
+            id,
+            RequestUpdate(
+                status=request.status.next(),
+                staff=user.to_ref(),
+            ),
+            session=session,
+        )
     return Response(data=True)

@@ -8,7 +8,7 @@ from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import Mongo
 from app.schema.branch import BranchCreateWithoutBusiness, BranchResponse, BranchUpdate
-from app.service import branchService, businessService, userService
+from app.service import areaService, branchService, businessService, unitService, userService
 
 apiRouter = APIRouter(
     tags=["Branch"],
@@ -93,4 +93,6 @@ async def delete_branch(id: PydanticObjectId, request: Request):
             raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
         await branchService.delete(id, session=session)
         await userService.delete_many(conditions={"branch.$id": id})
-        return Response(data="Xóa thành công")
+        await areaService.delete_many(conditions={"branch.$id": id})
+        await unitService.delete_many(conditions={"branch.$id": id})
+    return Response(data="Xóa thành công")
