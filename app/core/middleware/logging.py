@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, Dict
 
 import httpx
@@ -26,11 +27,13 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         }
 
     async def dispatch(self, request: Request, call_next):
+        request_time = datetime.now()
         start_time = time.time()
         try:
             response = await call_next(request)
             duration = time.time() - start_time
             log_data = {
+                "timestamp": request_time.isoformat(),
                 **self._get_request_info(request),
                 "duration": duration,
                 "status_code": response.status_code,

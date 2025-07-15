@@ -45,13 +45,14 @@ class Settings(BaseSettings):
         os.makedirs(os.path.dirname(self.LOG_FILE), exist_ok=True)
         logger.add(
             self.LOG_FILE,
-            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}",
+            format="{message}",
             level=self.LOG_LEVEL,
             enqueue=True,
             encoding="utf-8",
-            rotation="50 MB",  # Option: Rotate (reset) log file after reaching 50 MB
-            retention="7 days",  # Keep rotated log files (including zipped) for 7 days
-            compression="zip",  # Compress old log files into zip format
+            rotation="50 MB",
+            retention="7 days",
+            compression="zip",
+            filter=lambda record: "/ws" not in record["message"] and "WebSocket" not in record["message"],
         )
         return self
 
