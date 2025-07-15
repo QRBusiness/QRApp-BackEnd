@@ -191,11 +191,23 @@ async def extend_business(
     response_model=Response[BusinessResponse],
 )
 async def lock_unlock_business(id: PydanticObjectId):
-    business = await businessService.find(id)
-    if business is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy doanh nghiệp")
-    business = await businessService.update(id=id, data={"available": not business.available})
-    owner_id = business.owner.to_ref().id
-    await userService.update(id=owner_id, data={"available": business.available})
-    await business.fetch_link("business_type")
-    return Response(data=business)
+    async with businessService.transaction(Mongo.client) as session:
+        business = await businessService.find(id, session=session)
+        if business is None:
+            raise HTTP_404_NOT_FOUND("Không tìm thấy doanh nghiệp")
+        business = await businessService.update(
+            id=id,
+            data={
+                "available": not business.available,
+            },
+            session=session,
+        )
+        await userService.update(
+            id=business.owner.to_ref().id,
+            data={
+                "available": business.available,
+            },
+            session=session,
+        )
+        await business.fetch_link("business_type")
+        return Response(data=business)
