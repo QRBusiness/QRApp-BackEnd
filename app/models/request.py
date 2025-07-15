@@ -46,11 +46,6 @@ class Request(Base):
     __action__: List[str] = ["view", "receive", "delete", "update"]
 
     @after_event([Save])
-    async def set_paid_if_complete(self):
-        if self.status == RequestStatus.COMPLETED and self.type == RequestType.PAYMENT:
-            pass
-
-    @after_event([Save])
     async def create_order_if_complete(self):
         if self.status == RequestStatus.COMPLETED:
             if self.type == RequestType.ORDER:
