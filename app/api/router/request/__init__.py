@@ -5,7 +5,7 @@ from typing import List, Optional
 from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
@@ -44,24 +44,42 @@ async def get_extends():
 
 @apiRouter.put(
     path="/extend/{id}",
-    dependencies=[Depends(login_required), Depends(required_role(role=["Admin"]))],
-    response_model=Response,
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            required_role(
+                role=["Admin"],
+            ),
+        ),
+        Depends(
+            required_permissions(
+                permissions=["update.extendorder"],
+            ),
+        ),
+    ],
+    response_model=Response[bool],
 )
 async def put_extend(id: PydanticObjectId):
-    order = await extendOrderService.find(id)
-    if order is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
-    if order.status == OrderStatus.PAID:
-        raise HTTP_400_BAD_REQUEST("Đơn hàng đã được xử lí")
-    await order.fetch_all_links()
-    await extendOrderService.update(id, data={"status": OrderStatus.PAID})
-    await businessService.update(
-        id=order.business.to_ref().id,
-        data={
-            "expired_at": max(order.business.expired_at, datetime.now()) + timedelta(days=order.plan.period),
-        },
-    )
-    return Response(data=True)
+    async with extendOrderService.transaction(Mongo.client) as session:
+        order = await extendOrderService.find(id, session=session)
+        if order is None:
+            raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+        if order.status == OrderStatus.PAID:
+            raise HTTP_400_BAD_REQUEST("Đơn hàng đã được xử lí")
+        await order.fetch_all_links()
+        await extendOrderService.update(
+            id,
+            data={"status": OrderStatus.PAID},
+            session=session,
+        )
+        await businessService.update(
+            id=order.business.to_ref().id,
+            data={
+                "expired_at": max(order.business.expired_at, datetime.now()) + timedelta(days=order.plan.period),
+            },
+            session=session,
+        )
+        return Response(data=True)
 
 
 @apiRouter.post(
@@ -131,7 +149,10 @@ async def get_requests(
     return Response(data=requests)
 
 
-@apiRouter.post(path="", response_model=Response[MinimumResquestResponse])
+@apiRouter.post(
+    path="",
+    response_model=Response[MinimumResquestResponse],
+)
 @limiter(max_request=10)
 async def request(data: RequestCreate, request: Request):
     service_unit = await unitService.find_one(conditions={"_id": data.service_unit, "area.$id": data.area})
