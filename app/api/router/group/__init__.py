@@ -100,11 +100,13 @@ async def delete_group(id: PydanticObjectId, request: Request):
             id,
             session=session,
         )
-        await userService.delete_many(
+        await userService.update_many(
             conditions={
                 "group.$id": id,
-                "role": {
-                    "$ne": "BusinessOwner",
+            },
+            update_data={
+                "$pull": {
+                    "group": {"$id": id},
                 },
             },
             session=session,
@@ -112,8 +114,16 @@ async def delete_group(id: PydanticObjectId, request: Request):
     return Response(data="Xóa thành công")
 
 
-@apiRouter.post(path="/{id}/permissions", name="Cấp quyền", response_model=Response[GroupResponse])
-async def give_permissions(id: PydanticObjectId, request: Request, data: List[PydanticObjectId] | None = None):
+@apiRouter.post(
+    path="/{id}/permissions",
+    name="Cấp quyền",
+    response_model=Response[GroupResponse],
+)
+async def give_permissions(
+    id: PydanticObjectId,
+    request: Request,
+    data: List[PydanticObjectId] | None = None,
+):
     # Check scope
     group = await groupService.find(id)
     if group is None:

@@ -125,7 +125,7 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         result = await self.model.find(
             conditions,
             session=session,
-        ).update({"$set": update_data}, session=session)
+        ).update(update_data, session=session)
         return result.modified_count
 
     # 8. Xóa theo ID
