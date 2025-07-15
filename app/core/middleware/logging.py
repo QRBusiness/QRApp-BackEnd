@@ -63,10 +63,17 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 error = KeyResponse.CONFLICT
                 message = e.details["errmsg"]
             log_data = {
+                "timestamp": request_time.isoformat(),
                 **self._get_request_info(request),
                 "duration": duration,
                 "status_code": status_code,
                 "error": type(e).__name__,
             }
             logger.error(json.dumps(log_data))
-            return JSONResponse(status_code=status_code, content={"error": error, "message": message})
+            return JSONResponse(
+                status_code=status_code,
+                content={
+                    "error": error,
+                    "message": message,
+                },
+            )
