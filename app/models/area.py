@@ -14,9 +14,7 @@ class Area(Base):
         description="Khu vực trong doanh nghiệp (Tầng 1, Khu A, Quầy tiếp tân...)",
     )
     description: Optional[str] = Field(None, description="Mô tả thêm về khu vực")
-    image_url: Optional[str] = Field(
-        None, description="Đường dẫn ảnh minh họa khu vực (nếu có)"
-    )
+    image_url: Optional[str] = Field(None, description="Đường dẫn ảnh minh họa khu vực (nếu có)")
     branch: Link[Branch] = Field(..., description="Chi nhánh sở hữu")
     business: Link[Business] = Field(..., description="Doanh nghiệp sở hữu khu vực này")
 
@@ -28,4 +26,4 @@ class Area(Base):
             conditions={
                 "area.$id": self.id,
             }
-        )    
+        )

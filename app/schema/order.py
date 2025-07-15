@@ -15,8 +15,8 @@ from app.schema.service_unit import ServiceUnitResponse
 
 class OrderCreate(BaseModel):
     # General info
-    items: List = Field(default_factory=list,description="Danh sách món")
-    amount: float = Field(default=None,description="Tổng bill")
+    items: List = Field(default_factory=list, description="Danh sách món")
+    amount: float = Field(default=None, description="Tổng bill")
     # Business info
     business: Link[Business] = Field(...)
     branch: Link[Branch] = Field(...)
@@ -27,9 +27,11 @@ class OrderCreate(BaseModel):
     # Payment method:
     payment_method: PaymentMethod = Field(default=PaymentMethod.CASH)
 
+
 class OrderUpdate(BaseModel):
     status: Optional[OrderStatus] = Field(default=None)
     payment_method: PaymentMethod = Field(default=PaymentMethod.CASH)
+
 
 class OrderResponse(BaseResponse):
     items: List[Any]
@@ -40,13 +42,16 @@ class OrderResponse(BaseResponse):
     request: MinimumResquestResponse
     payment_method: PaymentMethod
 
+
 class ExtenOrderCreate(BaseModel):
     business: Business
     plan: Plan
     image: str
 
+
 class ExtenOrderUpdate(BaseModel):
     status: Optional[OrderStatus] = None
+
 
 class ExtenOrderResponse(BaseModel):
     business: BusinessResponse

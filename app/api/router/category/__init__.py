@@ -3,24 +3,24 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import (login_required, required_permissions,
-                                required_role)
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
-from app.schema.category import (CategoryCreate, CategoryResponse,
-                                 CategoryUpdate, FullCategoryResponse,
-                                 SubCategoryCreate, SubCategoryResponse,
-                                 SubCategoryUpdate)
-from app.service import (businessService, categoryService, productService,
-                         subcategoryService)
+from app.schema.category import (
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
+    FullCategoryResponse,
+    SubCategoryCreate,
+    SubCategoryResponse,
+    SubCategoryUpdate,
+)
+from app.service import businessService, categoryService, productService, subcategoryService
 
 apiRouter = APIRouter(
     tags=["Category"],
     prefix="/categories",
-    dependencies=[
-        Depends(login_required),
-        Depends(required_role(role=["BusinessOwner","Staff"]))
-    ],
+    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner", "Staff"]))],
 )
 
 
@@ -29,15 +29,11 @@ apiRouter = APIRouter(
     name="Phân loại sản phẩm",
     status_code=201,
     response_model=Response[CategoryResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=["create.category"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["create.category"]))],
 )
 async def post_category(data: CategoryCreate, request: Request):
     business = await businessService.find(request.state.user_scope)
-    if await categoryService.find_one(
-        conditions={"name": data.name, "business.$id": business.id}
-    ):
+    if await categoryService.find_one(conditions={"name": data.name, "business.$id": business.id}):
         raise HTTP_409_CONFLICT(f"Phân loại {data.name} đã tồn tại")
     data = data.model_dump()
     data["business"] = business
@@ -50,9 +46,7 @@ async def post_category(data: CategoryCreate, request: Request):
     name="Xem tất cả phân loại",
     status_code=200,
     response_model=Response[List[CategoryResponse]],
-    dependencies=[
-        Depends(required_permissions(permissions=["view.category"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["view.category"]))],
 )
 async def get_subcategory(request: Request):
     categories = await categoryService.find_many(
@@ -66,13 +60,9 @@ async def get_subcategory(request: Request):
     name="Xem tất cả chi tiết phân loại",
     status_code=200,
     response_model=Response[List[SubCategoryResponse]],
-    dependencies=[
-        Depends(required_permissions(permissions=["view.subcategory"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["view.subcategory"]))],
 )
-async def get_category(
-    request: Request, category: Optional[PydanticObjectId] = Query(default=None)
-):
+async def get_category(request: Request, category: Optional[PydanticObjectId] = Query(default=None)):
     if category:
         category = await categoryService.find(category)
         if category is None:
@@ -86,38 +76,36 @@ async def get_category(
         conditions={
             "category._id": {"$in": [cat.id for cat in categories]},
         },
-        fetch_links=True
+        fetch_links=True,
     )
     return Response(data=subcategories)
+
 
 @apiRouter.put(
     path="/subcategory/{id}",
     name="Chỉnh sửa chi tiết phân loại",
     status_code=200,
     response_model=Response[SubCategoryResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=["update.subcategory"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["update.subcategory"]))],
 )
-async def put_sub_category(id:PydanticObjectId,data:SubCategoryUpdate,request: Request):
+async def put_sub_category(id: PydanticObjectId, data: SubCategoryUpdate, request: Request):
     sub_category = await subcategoryService.find(id)
     if sub_category is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
     await sub_category.fetch_link("category")
     if sub_category.category.business.id != PydanticObjectId(request.state.user_scope):
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-    subcat = await subcategoryService.update(id,data)
+    subcat = await subcategoryService.update(id, data)
     await subcat.fetch_link("category")
     return Response(data=subcat)
+
 
 @apiRouter.get(
     path="/{id}",
     name="Xem một phân loại",
     status_code=200,
     response_model=Response[FullCategoryResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=["view.subcategory"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["view.subcategory"]))],
 )
 async def view_category(id: PydanticObjectId, request: Request):
     category = await categoryService.find_one(
@@ -143,9 +131,7 @@ async def view_category(id: PydanticObjectId, request: Request):
     name="Chỉnh sửa phân loại",
     status_code=200,
     response_model=Response[CategoryResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=["update.category"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["update.category"]))],
 )
 async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Request):
     category = await categoryService.find_one(
@@ -160,16 +146,15 @@ async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Requ
     category = await categoryService.update(id=category.id, data=data)
     return Response(data=category)
 
+
 @apiRouter.delete(
     path="/{id}",
     name="Xóa phân loại",
     status_code=200,
     response_model=Response[str],
-    dependencies=[
-        Depends(required_permissions(permissions=["delete.category"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["delete.category"]))],
 )
-async def delete_category(id: PydanticObjectId,request: Request):
+async def delete_category(id: PydanticObjectId, request: Request):
     category = await categoryService.find_one(
         conditions={
             "_id": id,
@@ -182,18 +167,15 @@ async def delete_category(id: PydanticObjectId,request: Request):
         return Response(data="Xóa thành công")
     return Response(data="Xóa thất bại")
 
+
 @apiRouter.post(
     path="/{id}/subcategory",
     name="Phân loại chi tiết",
     status_code=201,
     response_model=Response[SubCategoryResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=["create.subcategory"]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["create.subcategory"]))],
 )
-async def post_subcategory(
-    id: PydanticObjectId, data: SubCategoryCreate, request: Request
-):
+async def post_subcategory(id: PydanticObjectId, data: SubCategoryCreate, request: Request):
     category = await categoryService.find_one(
         conditions={
             "_id": id,
@@ -204,32 +186,27 @@ async def post_subcategory(
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
     data = data.model_dump()
     data["category"] = category
-    data['business'] = category.business
+    data["business"] = category.business
     sub_category = await subcategoryService.insert(data)
     return Response(data=sub_category)
+
 
 @apiRouter.delete(
     path="/{id}/subcategory",
     name="Xóa phân loại chi tiết",
     status_code=200,
     response_model=Response[str],
-    dependencies=[
-        Depends(required_permissions(permissions=["delete.subcategory"]))
-    ]  
+    dependencies=[Depends(required_permissions(permissions=["delete.subcategory"]))],
 )
-async def delete_subcategory(
-    id: PydanticObjectId, request: Request
-):
+async def delete_subcategory(id: PydanticObjectId, request: Request):
     sub_category = await subcategoryService.find(id)
     if sub_category is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-    await sub_category.fetch_link('category')
+    await sub_category.fetch_link("category")
     category = sub_category.category
     if category.business.id != PydanticObjectId(request.state.user_scope):
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-    products = await productService.find_many(conditions={
-        "subcategory.$id":id
-    })
+    products = await productService.find_many(conditions={"subcategory.$id": id})
     if not await subcategoryService.delete(id):
         return Response(data="Xóa thất bại")
     for product in products:

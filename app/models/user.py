@@ -38,15 +38,11 @@ class User(Base):
         if self.role not in ["Admin", "BusinessOwner", "Staff"]:
             raise Exception("Role")
         if not self.password.startswith("$2b$"):
-            self.password = bcrypt.hashpw(
-                self.password.encode("utf-8"), bcrypt.gensalt()
-            ).decode("utf-8")
+            self.password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
     def change_password(self, new_password: str) -> Self:
         if not new_password.startswith("$2b$"):
-            self.password = bcrypt.hashpw(
-                new_password.encode("utf-8"), bcrypt.gensalt()
-            ).decode("utf-8")
+            self.password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         return self
 
     def verify_password(self, password: str) -> bool:

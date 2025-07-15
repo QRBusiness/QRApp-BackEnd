@@ -4,20 +4,15 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependency import (login_required, required_permissions,
-                                required_role)
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
-from app.common.http_exception import (HTTP_400_BAD_REQUEST,
-                                       HTTP_404_NOT_FOUND, HTTP_409_CONFLICT)
+from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.db import Mongo
 from app.schema.branch import BranchCreate
-from app.schema.business import (BusinessCreate, BusinessResponse,
-                                 BusinessUpdate, ExtendBusiness,
-                                 FullBusinessResponse)
+from app.schema.business import BusinessCreate, BusinessResponse, BusinessUpdate, ExtendBusiness, FullBusinessResponse
 from app.schema.user import BusinessOwner, BusinessRegister, FullUserResponse
-from app.service import (branchService, businessService, businessTypeService,
-                         userService)
+from app.service import branchService, businessService, businessTypeService, userService
 
 apiRouter = APIRouter(
     tags=["Business"],
@@ -46,14 +41,10 @@ async def get_businesses(
     if available is not None:
         conditions["available"] = available
     if type:
-        types = await businessTypeService.find_many(
-            {"name": {"$regex": type, "$options": "i"}}
-        )
+        types = await businessTypeService.find_many({"name": {"$regex": type, "$options": "i"}})
         type_ids = [type.id for type in types]
         conditions["business_type._id"] = {"$in": type_ids}
-    businesses = await businessService.find_many(
-        conditions, skip=(page - 1) * limit, limit=limit, fetch_links=True
-    )
+    businesses = await businessService.find_many(conditions, skip=(page - 1) * limit, limit=limit, fetch_links=True)
     return Response(data=businesses)
 
 
@@ -97,15 +88,17 @@ async def put_business(id: PydanticObjectId, data: BusinessUpdate):
 )
 async def post_business(data: BusinessRegister):
     async with businessService.transaction(Mongo.client) as session:
-        type = await businessTypeService.find(data.business_type,session)
+        type = await businessTypeService.find(data.business_type, session)
         if type is None:
             raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp không phù hợp")
-        if await businessService.find_one({"name": data.business_name},session=session):
+        if await businessService.find_one({"name": data.business_name}, session=session):
             raise HTTP_409_CONFLICT("Tên doanh nghiệp đã được đăng kí")
-        if await userService.find_one({"username": data.username},):
+        if await userService.find_one(
+            {"username": data.username},
+        ):
             raise HTTP_409_CONFLICT("Tên đăng nhập đã được đăng kí")
         if data.business_tax_code:
-            if await businessService.find_one({"tax_code": data.business_tax_code},session=session):
+            if await businessService.find_one({"tax_code": data.business_tax_code}, session=session):
                 raise HTTP_409_CONFLICT("Mã số thuế đã được sử dụng")
         business = BusinessCreate(
             name=data.business_name,
@@ -122,14 +115,14 @@ async def post_business(data: BusinessRegister):
             phone=data.owner_contact,
             address=data.owner_address,
         )
-        business = await businessService.insert(business,session=session)
-        owner = await userService.insert(owner,session=session)
+        business = await businessService.insert(business, session=session)
+        owner = await userService.insert(owner, session=session)
         business = await businessService.update(
             id=business.id,
             data={
                 "owner": owner,
             },
-            session=session
+            session=session,
         )
         await userService.update(
             id=owner.id,
@@ -148,12 +141,10 @@ async def post_business(data: BusinessRegister):
             session=session,
         )
         user = await userService.find_one(
-            {"username": data.username},
-            session=session,
-            fetch_links=True,
-            projection_model=FullUserResponse
+            {"username": data.username}, session=session, fetch_links=True, projection_model=FullUserResponse
         )
     return Response(data=user)
+
 
 @apiRouter.post(
     path="/extend",
@@ -168,13 +159,14 @@ async def extend_business(
     if business is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy doanh nghiệp")
     business = await businessService.update(
-        id = data.id,
-        data = {
-            "expired_at": max(business.expired_at,datetime.now()) + timedelta(days=data.days),
-        }
+        id=data.id,
+        data={
+            "expired_at": max(business.expired_at, datetime.now()) + timedelta(days=data.days),
+        },
     )
     await business.fetch_link("business_type")
     return Response(data=business)
+
 
 @apiRouter.put(
     path="/active/{id}",
@@ -186,9 +178,7 @@ async def lock_unlock_business(id: PydanticObjectId):
     business = await businessService.find(id)
     if business is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy doanh nghiệp")
-    business = await businessService.update(
-        id=id, data={"available": not business.available}
-    )
+    business = await businessService.update(id=id, data={"available": not business.available})
     owner_id = business.owner.to_ref().id
     await userService.update(id=owner_id, data={"available": business.available})
     await business.fetch_link("business_type")

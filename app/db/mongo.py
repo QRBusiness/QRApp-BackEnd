@@ -6,9 +6,24 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import BulkWriteError
 
 from app.core.config import settings
-from app.models import (Area, Branch, Business, BusinessType, Category,
-                        ExtendOrder, Group, Order, Payment, Permission, Plan,
-                        Product, Request, ServiceUnit, SubCategory, User)
+from app.models import (
+    Area,
+    Branch,
+    Business,
+    BusinessType,
+    Category,
+    ExtendOrder,
+    Group,
+    Order,
+    Payment,
+    Permission,
+    Plan,
+    Product,
+    Request,
+    ServiceUnit,
+    SubCategory,
+    User,
+)
 from app.schema.user import Administrator
 from app.service import permissionService, userService
 

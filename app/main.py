@@ -27,22 +27,23 @@ app = FastAPI(
     description="""
 ### 🔹 Tính năng
 
-- **Quản lý doanh nghiệp**  
+- **Quản lý doanh nghiệp**
   Tạo và quản lý thông tin doanh nghiệp, chi nhánh, khu vực, bàn/phòng (service unit).
 
-- **Quản lý người dùng & phân quyền**  
-  Đăng ký, đăng nhập, phân quyền theo nhóm (quản lý, nhân viên, kế toán, ...), kiểm soát truy cập theo vai trò, chi nhánh.
+- **Quản lý người dùng & phân quyền**
+  Đăng ký, đăng nhập, phân quyền theo nhóm (quản lý, nhân viên, kế toán, ...)
+  Kiểm soát truy cập theo vai trò, chi nhánh.
 
-- **Quản lý sản phẩm & menu**  
+- **Quản lý sản phẩm & menu**
   Thêm, sửa, xóa sản phẩm, phân loại, xây dựng menu động cho từng chi nhánh.
 
-- **Đặt món & xử lý đơn hàng**  
+- **Đặt món & xử lý đơn hàng**
   Đặt món qua QR code, tạo đơn hàng, cập nhật trạng thái, xử lý thanh toán
 
-- **Yêu cầu phục vụ & tương tác real-time**  
+- **Yêu cầu phục vụ & tương tác real-time**
   Gửi yêu cầu phục vụ, gọi món, thanh toán, kết nối qua WebSocket
 
-- **Quản lý nhóm quyền**  
+- **Quản lý nhóm quyền**
   Tạo nhóm, gán quyền, kiểm soát truy cập chi tiết tới từng chức năng.
 
 ---
@@ -56,7 +57,7 @@ app = FastAPI(
 
 ### 📚 Tài liệu
 
-- Swagger UI: `/docs`  
+- Swagger UI: `/docs`
 - ReDoc: `/redoc`
 """,
     debug=False,
@@ -75,6 +76,8 @@ app.add_middleware(
 )
 # API Endpoint
 app.include_router(api)
+
+
 # WebSocket
 @app.websocket("/ws")
 async def websocket(websocket: WebSocket):

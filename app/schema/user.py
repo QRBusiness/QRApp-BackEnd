@@ -94,9 +94,7 @@ class BusinessRegister(Auth):
     business_address: Optional[str] = None
     business_contact: Optional[str] = None
     business_type: PydanticObjectId
-    business_tax_code: Optional[str] = Field(
-        default=None, description="Business tax code"
-    )
+    business_tax_code: Optional[str] = Field(default=None, description="Business tax code")
 
     @computed_field(return_type=str)
     @property

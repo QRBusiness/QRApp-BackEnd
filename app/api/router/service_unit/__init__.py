@@ -3,8 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import (login_required, required_permissions,
-                                required_role)
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
 from app.db import QRCode
@@ -16,7 +15,7 @@ apiRouter = APIRouter(
     prefix="/services",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner","Staff"])),
+        Depends(required_role(role=["BusinessOwner", "Staff"])),
     ],
 )
 
@@ -25,24 +24,14 @@ apiRouter = APIRouter(
     path="",
     name="Xem đơn vị dịch vụ",
     response_model=Response[List[ServiceUnitResponse]],
-    dependencies=[
-        Depends(required_permissions(permissions=[
-            "view.serviceunit"
-        ]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["view.serviceunit"]))],
 )
 async def get_service(
     request: Request,
-    branch: Optional[PydanticObjectId] = Query(
-        default=None, description="Lọc đơn vị theo chi nhánh"
-    ),
-    area: Optional[PydanticObjectId] = Query(
-        default=None, description="Lọc đơn vị theo khu vực"
-    ),
+    branch: Optional[PydanticObjectId] = Query(default=None, description="Lọc đơn vị theo chi nhánh"),
+    area: Optional[PydanticObjectId] = Query(default=None, description="Lọc đơn vị theo khu vực"),
 ):
-    areas = await areaService.find_many(
-        conditions={"business.$id": PydanticObjectId(request.state.user_scope)}
-    )
+    areas = await areaService.find_many(conditions={"business.$id": PydanticObjectId(request.state.user_scope)})
     areas = [area.to_ref().id for area in areas]
     conditions = {"area._id": {"$in": [area] if area else areas}}
     services = await unitService.find_many(conditions, fetch_links=True)
@@ -56,11 +45,7 @@ async def get_service(
     name="Tạo đơn vị dịch vụ",
     status_code=201,
     response_model=Response[ServiceUnitResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=[
-            "create.serviceunit"
-        ]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["create.serviceunit"]))],
 )
 async def post_service(
     request: Request,
@@ -83,13 +68,15 @@ async def post_service(
         qr_link = QRCode.get_url(object_name)
     else:
         qr_link = None
-    data = await unitService.insert({
-        "name": name,
-        "area": area,
-        "qr_code": qr_link,
-        "branch": area.branch,
-    })
-    await data.fetch_link('area')
+    data = await unitService.insert(
+        {
+            "name": name,
+            "area": area,
+            "qr_code": qr_link,
+            "branch": area.branch,
+        }
+    )
+    await data.fetch_link("area")
     await data.area.fetch_link("branch")
     return Response(data=data)
 
@@ -98,11 +85,7 @@ async def post_service(
     path="/{id}",
     name="Cập nhật đơn vị dịch vụ",
     response_model=Response[ServiceUnitResponse],
-    dependencies=[
-        Depends(required_permissions(permissions=[
-            "update.serviceunit"
-        ]))
-    ]
+    dependencies=[Depends(required_permissions(permissions=["update.serviceunit"]))],
 )
 async def put_service(id: PydanticObjectId, data: ServiceUnitUpdate, request: Request):
     service_unit = await unitService.find(id)
@@ -131,9 +114,7 @@ async def post_qrcode(id: PydanticObjectId, qr_code: UploadFile = File(...)):
         object_name=f"{id}_{qr_code.filename}",
         content_type=qr_code.content_type,
     )
-    service = await unitService.update(
-        id=id, data={"qr_code": QRCode.get_url(object_name)}
-    )
+    service = await unitService.update(id=id, data={"qr_code": QRCode.get_url(object_name)})
     await service.fetch_link("area")
     return Response(data=service)
 
@@ -143,10 +124,8 @@ async def post_qrcode(id: PydanticObjectId, qr_code: UploadFile = File(...)):
     name="Xóa đơn vị dịch vụ",
     response_model=Response,
     dependencies=[
-        Depends(required_permissions(permissions=[
-            "delete.serviceunit"
-        ]))
-    ]
+        Depends(required_permissions(permissions=["delete.serviceunit"])),
+    ],
 )
 async def delete_service(id: PydanticObjectId, request: Request):
     service_unit = await unitService.find(id)

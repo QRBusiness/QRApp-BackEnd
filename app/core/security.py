@@ -24,9 +24,7 @@ class JWTSecurity:
         else:
             to_encode = jsonable_encoder(payload)
         expire = datetime.datetime.now(datetime.timezone.utc) + (
-            self._expires_delta
-            if self._expires_delta
-            else datetime.timedelta(minutes=15)
+            self._expires_delta if self._expires_delta else datetime.timedelta(minutes=15)
         )
         to_encode.update({"exp": expire})
         token = jwt.encode(to_encode, self._secret_key, algorithm=self._algorithm)

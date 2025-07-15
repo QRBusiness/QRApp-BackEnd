@@ -23,11 +23,14 @@ class RequestUpdate(BaseModel):
     status: Optional[RequestStatus] = RequestStatus.COMPLETED
     staff: Optional[Link[User]] = None
 
+
 class MinimumResquestResponse(BaseResponse):
     type: RequestType
     reason: Optional[str] = None
     status: RequestStatus
     guest_name: Optional[str] = None
+
+
 class ResquestResponse(BaseResponse):
     type: RequestType
     reason: Optional[str] = None

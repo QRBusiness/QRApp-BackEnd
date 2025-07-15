@@ -16,7 +16,11 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     # 1. Tìm theo ID
-    async def find(self, id: Any,session: AsyncIOMotorClientSession | None = None,) -> Optional[ModelType]:
+    async def find(
+        self,
+        id: Any,
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> Optional[ModelType]:
         return await self.model.get(
             document_id=id,
             session=session,
@@ -24,15 +28,15 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     # 2. Tìm một document theo điều kiện
     async def find_one(
-        self, 
-        conditions: Dict[str, Any] | None = None, 
+        self,
+        conditions: Dict[str, Any] | None = None,
         projection_model: None = None,
-        fetch_links:bool = False,
+        fetch_links: bool = False,
         session: AsyncIOMotorClientSession | None = None,
     ) -> Optional[ModelType]:
         conditions = conditions or {}
         return await self.model.find_one(
-            conditions, 
+            conditions,
             projection_model=projection_model,
             fetch_links=fetch_links,
             session=session,
@@ -59,18 +63,22 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         ).to_list()
 
     # 4. Ghi 1 document
-    async def insert(self, data: Union[dict, CreateSchemaType], session: AsyncIOMotorClientSession | None = None,) -> ModelType:
+    async def insert(
+        self,
+        data: Union[dict, CreateSchemaType],
+        session: AsyncIOMotorClientSession | None = None,
+    ) -> ModelType:
         if isinstance(data, BaseModel):
             data = data.model_dump()
         doc = self.model(**data)
         await doc.insert(
-            session = session,
+            session=session,
         )
         return doc
 
     # 5. Ghi nhiều document
     async def insert_many(
-        self, 
+        self,
         data: List[Union[dict, CreateSchemaType]],
         session: AsyncIOMotorClientSession | None = None,
     ) -> List[ModelType]:
@@ -86,9 +94,12 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     # 6. Cập nhật theo ID
     async def update(
-        self, id: Any, data: Union[dict, UpdateSchemaType],session: AsyncIOMotorClientSession | None = None,
+        self,
+        id: Any,
+        data: Union[dict, UpdateSchemaType],
+        session: AsyncIOMotorClientSession | None = None,
     ) -> Optional[ModelType]:
-        db_item = await self.model.get(id,session=session)
+        db_item = await self.model.get(id, session=session)
         if not db_item:
             return None
         if isinstance(data, BaseModel):
@@ -99,28 +110,26 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_item
 
     async def update_one(
-        self, id: Any, conditions: Dict[str, Any],
-        session: AsyncIOMotorClientSession | None = None
+        self, id: Any, conditions: Dict[str, Any], session: AsyncIOMotorClientSession | None = None
     ) -> Optional[ModelType]:
-        await self.model.find_one({"_id": id},session=session,).update(conditions)
+        await self.model.find_one(
+            {"_id": id},
+            session=session,
+        ).update(conditions)
         return await self.model.get(id)
 
     # 7. Cập nhật nhiều document theo điều kiện
     async def update_many(
-        self, conditions: dict[str, Any], update_data: dict[str, Any],
-        session: AsyncIOMotorClientSession | None = None
+        self, conditions: dict[str, Any], update_data: dict[str, Any], session: AsyncIOMotorClientSession | None = None
     ) -> int:
         result = await self.model.find(
             conditions,
             session=session,
-        ).update(
-            {"$set": update_data},
-            session=session
-        )
+        ).update({"$set": update_data}, session=session)
         return result.modified_count
 
     # 8. Xóa theo ID
-    async def delete(self, id: Any,session: AsyncIOMotorClientSession | None = None) -> bool:
+    async def delete(self, id: Any, session: AsyncIOMotorClientSession | None = None) -> bool:
         db_item = await self.model.get(id)
         if not db_item:
             return False
@@ -128,24 +137,24 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return True
 
     # 9. Xóa nhiều theo điều kiện
-    async def delete_many(self, conditions: dict[str, Any],session: AsyncIOMotorClientSession | None = None) -> int:
+    async def delete_many(self, conditions: dict[str, Any], session: AsyncIOMotorClientSession | None = None) -> int:
         result = await self.model.find(
             conditions,
             session=session,
-        ).delete(
-            session=session
-        )
+        ).delete(session=session)
         return result.deleted_count
 
     # 10. Đếm số lượng document theo điều kiện
-    async def count(self, conditions: dict[str, Any] | None = None,session: AsyncIOMotorClientSession | None = None) -> int:
+    async def count(
+        self, conditions: dict[str, Any] | None = None, session: AsyncIOMotorClientSession | None = None
+    ) -> int:
         conditions = conditions or {}
         return await self.model.find(
             conditions,
             session=session,
         ).count()
 
-    # 11. Transaction 
+    # 11. Transaction
     @staticmethod
     @asynccontextmanager
     async def transaction(client: AsyncIOMotorClient):

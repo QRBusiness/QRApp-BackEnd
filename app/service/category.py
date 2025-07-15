@@ -1,6 +1,5 @@
 from app.models.category import Category, SubCategory
-from app.schema.category import (CategoryCreate, CategoryUpdate,
-                                 SubCategoryCreate, SubCategoryUpdate)
+from app.schema.category import CategoryCreate, CategoryUpdate, SubCategoryCreate, SubCategoryUpdate
 from app.service.base import Service
 
 

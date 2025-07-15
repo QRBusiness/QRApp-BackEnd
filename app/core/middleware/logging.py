@@ -43,9 +43,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             status_code = 500
             error = KeyResponse.SERVER_ERROR
             message = get_message(KeyResponse.SERVER_ERROR)
-            if isinstance(e,httpx.ConnectTimeout):
+            if isinstance(e, httpx.ConnectTimeout):
                 message = "Hệ thống đang bận, vui lòng thử lại sau."
-            if isinstance(e,PyMongoError):
+            if isinstance(e, PyMongoError):
                 message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
             if isinstance(e, ResponseValidationError):
                 status_code = 422
@@ -66,6 +66,4 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "error": type(e).__name__,
             }
             logger.error(json.dumps(log_data))
-            return JSONResponse(
-                status_code=status_code, content={"error": error, "message": message}
-            )
+            return JSONResponse(status_code=status_code, content={"error": error, "message": message})

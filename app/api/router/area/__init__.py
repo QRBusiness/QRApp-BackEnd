@@ -3,8 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import (login_required, required_permissions,
-                                required_role)
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.schema.area import AreaCreate, AreaResponse, AreaUpdate
@@ -15,7 +14,7 @@ apiRouter = APIRouter(
     prefix="/areas",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner","Staff"])),
+        Depends(required_role(role=["BusinessOwner", "Staff"])),
     ],
 )
 
@@ -27,9 +26,7 @@ apiRouter = APIRouter(
     response_model=Response[List[AreaResponse]],
     dependencies=[Depends(required_permissions(permissions=["view.area"]))],
 )
-async def view_areas(
-    request: Request, branch: Optional[PydanticObjectId] = Query(default=None)
-):
+async def view_areas(request: Request, branch: Optional[PydanticObjectId] = Query(default=None)):
     conditions = {
         "business._id": PydanticObjectId(request.state.user_scope),
     }
@@ -54,9 +51,7 @@ async def post_area(data: AreaCreate, request: Request):
     branch = await branchService.find(data.branch)
     if branch is None or branch.business.to_ref().id != business.id:
         raise HTTP_404_NOT_FOUND("Không tìm thấy chi nhánh")
-    if await areaService.find_one(
-        {"branch.$id": branch.id, "name": {"$regex": f"^{data.name}$", "$options": "i"}}
-    ):
+    if await areaService.find_one({"branch.$id": branch.id, "name": {"$regex": f"^{data.name}$", "$options": "i"}}):
         raise HTTP_409_CONFLICT("Khu vực đã tồn tại")
     data = data.model_dump()
     data["business"] = business

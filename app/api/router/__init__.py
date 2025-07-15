@@ -66,9 +66,7 @@ async def broadcast_message(
         default=None,
         description="🏬 Mã chi nhánh (`branch_id`) thuộc `group` đã chỉ định (doanh nghiệp hoặc System).",
     ),
-    permission: Optional[str] = Query(
-        default=None, description="👤 Quyền hạn người dùng trong chi nhánh."
-    ),
+    permission: Optional[str] = Query(default=None, description="👤 Quyền hạn người dùng trong chi nhánh."),
     message: str = Query(
         ...,
         description="🔊 Nội dung tin nhắn sẽ được gửi tới người dùng thông qua WebSocket.",
@@ -85,24 +83,13 @@ async def broadcast_message(
 
 
 # Webhook
-@api.post(
-    tags=["Webhook"], 
-    path="/webhook", 
-    status_code=200, 
-    name="Webhook",
-    response_model=Response
-)
+@api.post(tags=["Webhook"], path="/webhook", status_code=200, name="Webhook", response_model=Response)
 def receive_webhook():
     return Response(data=True)
 
+
 # Health check
-@api.get(
-    tags=["Health check"], 
-    path="/health-check", 
-    status_code=200, 
-    name="Health Check",
-    response_model=Response
-)
+@api.get(tags=["Health check"], path="/health-check", status_code=200, name="Health Check", response_model=Response)
 def health_check():
     return Response(data=True)
 
@@ -115,6 +102,4 @@ def health_check():
     include_in_schema=False,
 )
 async def catch_all(path: str, request: Request):
-    raise HTTP_404_NOT_FOUND(
-        error="NOT FOUND", message=f"{request.method} {request.url.path} is undefined"
-    )
+    raise HTTP_404_NOT_FOUND(error="NOT FOUND", message=f"{request.method} {request.url.path} is undefined")

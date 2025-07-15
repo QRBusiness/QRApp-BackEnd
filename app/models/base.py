@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from beanie import (Document, Insert, PydanticObjectId, Replace, SaveChanges,
-                    Update, WriteRules, before_event)
+from beanie import Document, Insert, PydanticObjectId, Replace, SaveChanges, Update, WriteRules, before_event
 from pydantic import Field
 from pymongo.client_session import ClientSession
 

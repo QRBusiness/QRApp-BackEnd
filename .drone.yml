@@ -12,9 +12,9 @@ steps:
   - name: Build & Push Docker Image
     image: plugins/docker
     settings:
-      username: 
+      username:
         from_secret: DOCKERHUB_USERNAME # pragma: allowlist secret
-      password: 
+      password:
         from_secret: DOCKERHUB_TOKEN # pragma: allowlist secret
       repo: nhathuyd4hp/qrapp-backend
       cache_from:
@@ -26,9 +26,9 @@ steps:
   - name: Deploy to VPS
     image: ghcr.io/appleboy/drone-ssh
     settings:
-      host: 
+      host:
         from_secret: SSH_HOST # pragma: allowlist secret
-      username: 
+      username:
         from_secret: SSH_USERNAME # pragma: allowlist secret
       password:
         from_secret: SSH_PASSWORD # pragma: allowlist secret

@@ -22,22 +22,16 @@ class Business(Base):
         ...,
         description="Địa chỉ doanh nghiệp",
     )
-    contact: str = Field(
-        ..., description="Thông tin liên hệ (số điện thoại, email, website)"
-    )
-    business_type: Link["BusinessType"] = Field(
-        ..., description="Loại hình doanh nghiệp"
-    )
+    contact: str = Field(..., description="Thông tin liên hệ (số điện thoại, email, website)")
+    business_type: Link["BusinessType"] = Field(..., description="Loại hình doanh nghiệp")
     tax_code: Optional[str] = Field(default=None, description="Mã số thuế")
     owner: Optional["Link[User]"] = Field(default=None, description="Chủ sở hữu")  # type: ignore # noqa: F821
-    available: bool = Field(
-        default=True, description="Trạng thái hoạt động (True: đang hoạt động)"
-    )
+    available: bool = Field(default=True, description="Trạng thái hoạt động (True: đang hoạt động)")
     expired_at: datetime = Field(
-        default_factory=lambda: datetime.now() + timedelta(days = 14),
+        default_factory=lambda: datetime.now() + timedelta(days=14),
         description="Thời gian thử 14 ngày/2 tuần",
     )
-    logo: Optional[str] = Field(default=None,description="Logo doanh nghiệp")
+    logo: Optional[str] = Field(default=None, description="Logo doanh nghiệp")
 
     class Settings:
         indexes = [IndexModel([("name", 1)], unique=True)]

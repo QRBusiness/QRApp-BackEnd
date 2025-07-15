@@ -1,30 +1,38 @@
-# .pre-commit-config.yaml
 repos:
+  # 🧹 Pre-commit housekeeping
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: check-yaml
+      - id: check-json
+      - id: debug-statements
+      - id: check-case-conflict
 
+  # 🧠 Ruff = Lint (flake8 + isort + bugbear + ...) + Fix
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.4.4
     hooks:
       - id: ruff
-        name: ruff
-        files: \.py$
-        language_version: python3
         args:
-          - "--line-length=150"  # ✅ tăng giới hạn dòng ở đây
-          - "--fix"
-          - "--exit-non-zero-on-fix"
-          - "--select=F401,F841,E,F"
-
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1
-    hooks:
-      - id: isort
-        name: isort
+          - --fix
+          - --line-length=120
+          - --select=E,F,I,B
+          - "--ignore=B008"
         files: \.py$
 
+  # 🎨 Black formatter
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+        args: ["--line-length=120"]
+
+  # 🔐 Secret detection
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0
     hooks:

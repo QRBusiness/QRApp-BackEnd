@@ -3,16 +3,13 @@ from typing import List, Literal, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 
-from app.api.dependency import (login_required, required_permissions,
-                                required_role)
+from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
-from app.common.http_exception import (HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND,
-                                       HTTP_409_CONFLICT)
+from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import SessionManager
 from app.schema.user import FullUserResponse, Staff, UserResponse, UserUpdate
-from app.service import (branchService, businessService, permissionService,
-                         userService)
+from app.service import branchService, businessService, permissionService, userService
 
 apiRouter = APIRouter(
     tags=["User"],
@@ -32,9 +29,7 @@ apiRouter = APIRouter(
 )
 async def get_users(
     request: Request,
-    role: Optional[Literal["Admin", "BusinessOwner", "Staff"]] = Query(
-        default=None, description="Lọc theo vai trò"
-    ),
+    role: Optional[Literal["Admin", "BusinessOwner", "Staff"]] = Query(default=None, description="Lọc theo vai trò"),
 ):
     user_scope = request.state.user_scope
     if user_scope is None:
@@ -43,9 +38,7 @@ async def get_users(
             conditions["role"] = role
         users = await userService.find_many(conditions)
     else:
-        users = await userService.find_many(
-            {"business.$id": PydanticObjectId(user_scope), "role": "Staff"}
-        )
+        users = await userService.find_many({"business.$id": PydanticObjectId(user_scope), "role": "Staff"})
     return Response(data=users)
 
 
@@ -94,9 +87,7 @@ async def post_user(data: Staff, request: Request):
     response_model=Response[FullUserResponse],
     response_model_exclude={"data": {"group", "business"}},
 )
-async def post_permission(
-    id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request
-):
+async def post_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
     staff = await userService.find_one(
         conditions={
             "_id": id,  # Tìm theo id
@@ -125,9 +116,7 @@ async def post_permission(
     response_model=Response[FullUserResponse],
     response_model_exclude={"data": {"group", "business"}},
 )
-async def delete_permission(
-    id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request
-):
+async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
     staff = await userService.find_one(
         conditions={
             "_id": id,  # Tìm theo id
@@ -180,9 +169,7 @@ async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
         Depends(required_permissions(permissions=["update.user"])),
     ],
 )
-async def lock_unlock_user(
-    id: PydanticObjectId, request: Request, task: BackgroundTasks
-):
+async def lock_unlock_user(id: PydanticObjectId, request: Request, task: BackgroundTasks):
     def remove_session(user_id: str):
         SessionManager.delete(user_id)
 
@@ -190,9 +177,7 @@ async def lock_unlock_user(
     if user is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
     user_request_scope = request.state.user_scope
-    if user_request_scope is None or user_request_scope == str(
-        user.business.to_ref().id
-    ):
+    if user_request_scope is None or user_request_scope == str(user.business.to_ref().id):
         user = await userService.update(id=id, data={"available": not user.available})
         task.add_task(remove_session, str(id))
         return Response(data=user)

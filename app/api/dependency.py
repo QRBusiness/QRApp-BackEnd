@@ -4,7 +4,10 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.common.api_message import KeyResponse, get_message
-from app.common.http_exception import HTTP_401_UNAUTHORZIED, HTTP_403_FORBIDDEN
+from app.common.http_exception import (
+    HTTP_401_UNAUTHORZIED,
+    HTTP_403_FORBIDDEN,
+)
 from app.core.security import ACCESS_JWT
 from app.db import SessionManager
 
@@ -37,11 +40,11 @@ def login_required(
                 continue
             setattr(request.state, key, value)
         return True
-    except Exception:
+    except Exception as e:
         raise HTTP_401_UNAUTHORZIED(
             error=KeyResponse.INVALID_TOKEN,
             message=get_message(KeyResponse.INVALID_TOKEN),
-        )
+        ) from e
 
 
 def required_role(role: List[str] = None):

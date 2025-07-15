@@ -38,6 +38,7 @@ class BusinessUpdate(BaseModel):
     contact: Optional[str] = None
     tax_code: Optional[str] = None
 
+
 class ExtendBusiness(BaseModel):
     id: PydanticObjectId
     days: int
@@ -53,6 +54,7 @@ class FullBusinessResponse(BaseResponse):
     business_type: BusinessType
     owner: Optional[User] = Field(description="Business Owner")  # type: ignore
     expired_at: datetime
+
     @field_validator("owner")
     @classmethod
     def serializer_owner(cls, v: Optional[User]):

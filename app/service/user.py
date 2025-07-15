@@ -11,7 +11,11 @@ class UserService(Service[User, UserCreate, UserUpdate]):
     def __init__(self):
         super().__init__(User)
 
-    async def insert(self, data, session: AsyncIOMotorClientSession | None = None,):
+    async def insert(
+        self,
+        data,
+        session: AsyncIOMotorClientSession | None = None,
+    ):
         permissions = []
         if hasattr(data, "model_dump"):
             data = data.model_dump()
@@ -20,22 +24,20 @@ class UserService(Service[User, UserCreate, UserUpdate]):
         if data["role"] == "BusinessOwner":
             permissions = await permissionService.find_many({})
             permissions = [
-                permission
-                for permission in permissions
-                if not permission.code.endswith((".businesstype", ".business"))
+                permission for permission in permissions if not permission.code.endswith((".businesstype", ".business"))
             ]
-        if data['role'] == "Staff":
+        if data["role"] == "Staff":
             permissions = await permissionService.find_many({})
             permissions = [
                 permission
                 for permission in permissions
-                if 
-                    permission.code.startswith("view") and 
-                    permission.code.endswith(("area","branch","order","category","subcategory","serviceunit","product")
+                if permission.code.startswith("view")
+                and permission.code.endswith(
+                    ("area", "branch", "order", "category", "subcategory", "serviceunit", "product")
                 )
             ]
         data["permissions"] = permissions
-        return await super().insert(data,session=session)
+        return await super().insert(data, session=session)
 
 
 userService = UserService()

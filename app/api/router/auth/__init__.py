@@ -6,18 +6,14 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 from app.api.dependency import login_required, required_role
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
-from app.common.http_exception import (HTTP_400_BAD_REQUEST,
-                                       HTTP_401_UNAUTHORZIED,
-                                       HTTP_403_FORBIDDEN)
+from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORZIED, HTTP_403_FORBIDDEN
 from app.core.decorator import limiter
 from app.core.security import ACCESS_JWT, REFRESH_JWT
 from app.db import QRCode, SessionManager
 from app.schema.business import FullBusinessResponse
 from app.schema.permission import PermissionProjection
-from app.schema.user import (Auth, ChangePassword, FullUserResponse, Session,
-                             Token, UserResponse, UserUpdate)
-from app.service import (businessService, groupService, permissionService,
-                         userService)
+from app.schema.user import Auth, ChangePassword, FullUserResponse, Session, Token, UserResponse, UserUpdate
+from app.service import businessService, groupService, permissionService, userService
 
 apiRouter = APIRouter(
     tags=["Auth"],
@@ -40,7 +36,7 @@ async def sign_in(data: Auth, request: Request):
         )
     if not user.available:
         raise HTTP_403_FORBIDDEN("Tài khoản hiện bị khóa")
-    if user.role in ['BusinessOwner','Staff']:
+    if user.role in ["BusinessOwner", "Staff"]:
         business = await businessService.find(user.business.to_ref().id)
         if business.expired_at < datetime.now():
             raise HTTP_403_FORBIDDEN("Tài khoản doanh nghiệp đã hết hạn")
@@ -104,16 +100,12 @@ def sign_out(data: Session, request: Request):
     return Response(data="Đăng xuất thành công")
 
 
-@apiRouter.post(
-    path="/refresh-token", name="Làm mới token", response_model=Response[Token]
-)
+@apiRouter.post(path="/refresh-token", name="Làm mới token", response_model=Response[Token])
 def refresh_token(data: Session):
     payload = REFRESH_JWT.decode(data.refresh_token)
     payload.pop("exp")
     access_token = ACCESS_JWT.encode(payload)
-    return Response(
-        data=Token(access_token=access_token, refresh_token=data.refresh_token)
-    )
+    return Response(data=Token(access_token=access_token, refresh_token=data.refresh_token))
 
 
 @apiRouter.post(
@@ -143,15 +135,13 @@ async def me(request: Request):
     await user.fetch_all_links()
     return Response(data=user)
 
+
 @apiRouter.post(
     path="/upload-logo",
     name="Cập nhật logo doanh nghiệp",
     status_code=200,
-    dependencies=[
-        Depends(login_required),
-        Depends(required_role(role=['BusinessOwner']))
-    ],
-    response_model=Response[bool]
+    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner"]))],
+    response_model=Response[bool],
 )
 async def upload_logo(
     request: Request,
@@ -166,10 +156,7 @@ async def upload_logo(
         content_type=logo.content_type,
     )
     if not await businessService.update(
-        id = PydanticObjectId(request.state.user_scope),
-        data = {
-            "logo":QRCode.get_url(object_name)
-        }
+        id=PydanticObjectId(request.state.user_scope), data={"logo": QRCode.get_url(object_name)}
     ):
         raise HTTP_400_BAD_REQUEST("Tải ảnh thất bại")
     return Response(data=True)
@@ -196,9 +183,7 @@ async def upload_avatar(
         object_name=f"{request.state.user_id}_{avatar.filename}",
         content_type=avatar.content_type,
     )
-    user = await userService.update(
-        id=request.state.user_id, data={"image_url": QRCode.get_url(object_name)}
-    )
+    user = await userService.update(id=request.state.user_id, data={"image_url": QRCode.get_url(object_name)})
     return Response(data=user)
 
 

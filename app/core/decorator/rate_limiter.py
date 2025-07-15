@@ -29,16 +29,12 @@ def limiter(max_request: int = 5, duration: int = 60):
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
             if request is None:
-                raise RuntimeError(
-                    "This decorator requires the endpoint to receive a FastAPI Request object."
-                )
+                raise RuntimeError("This decorator requires the endpoint to receive a FastAPI Request object.")
             key = f"{func.__name__}:{request.state.request_id}"
             if LimitManager.exist(key):
                 count_request = int(LimitManager.get(key))
                 if count_request + 1 > max_request:
-                    raise HTTP_429_TOO_MANY_REQUESTS(
-                        f"Quá nhiều yêu cầu. Vui lòng thử lại sau {duration} giây."
-                    )
+                    raise HTTP_429_TOO_MANY_REQUESTS(f"Quá nhiều yêu cầu. Vui lòng thử lại sau {duration} giây.")
                 LimitManager.incr(key)
             else:
                 LimitManager.set(key, 1, ex=duration)
