@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from app.models import Business, Group, Permission
 from app.schema import BaseResponse
+from app.schema.branch import BranchResponse
 from app.schema.business import BusinessResponse
 from app.schema.group import GroupResponse
 from app.schema.permission import DetailPermissionResponse
@@ -112,6 +113,7 @@ class FullUserResponse(BaseResponse):
     permissions: List[DetailPermissionResponse] = []
     group: List[GroupResponse] = []
     business: Optional[BusinessResponse] = None
+    branch: Optional[BranchResponse] = None
     available: bool
 
 
@@ -122,4 +124,5 @@ class UserResponse(BaseResponse):
     address: Optional[str] = None
     image_url: Optional[str] = None
     role: Optional[str] = None
+    branch: Optional[BranchResponse] = None
     available: bool

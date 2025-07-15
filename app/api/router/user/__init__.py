@@ -25,7 +25,13 @@ apiRouter = APIRouter(
     path="",
     name="Xem danh sách",
     response_model=Response[List[UserResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.user"]))],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["view.user"],
+            ),
+        ),
+    ],
 )
 async def get_users(
     request: Request,
@@ -36,9 +42,16 @@ async def get_users(
         conditions = {}
         if role:
             conditions["role"] = role
-        users = await userService.find_many(conditions)
+        users = await userService.find_many(conditions, projection_model=UserResponse, fetch_links=True)
     else:
-        users = await userService.find_many({"business.$id": PydanticObjectId(user_scope), "role": "Staff"})
+        users = await userService.find_many(
+            {
+                "business._id": PydanticObjectId(user_scope),
+                "role": "Staff",
+            },
+            projection_model=UserResponse,
+            fetch_links=True,
+        )
     return Response(data=users)
 
 
