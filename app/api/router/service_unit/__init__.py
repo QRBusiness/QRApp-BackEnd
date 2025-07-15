@@ -54,6 +54,7 @@ async def get_service(
 @apiRouter.post(
     path="",
     name="Tạo đơn vị dịch vụ",
+    status_code=201,
     response_model=Response[ServiceUnitResponse],
     dependencies=[
         Depends(required_permissions(permissions=[
@@ -65,11 +66,11 @@ async def post_service(
     request: Request,
     name: str = Form(),
     area: PydanticObjectId = Form(),
-    qr_code: Optional[UploadFile] = File(None),
+    qr_code: Optional[UploadFile] = File(default=None),
 ):
     area = await areaService.find(area)
     if area is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực")
+        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
     if PydanticObjectId(request.state.user_scope) != area.business.to_ref().id:
         raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
     if qr_code:
@@ -85,7 +86,8 @@ async def post_service(
     data = await unitService.insert({
         "name": name,
         "area": area,
-        "qr_code": qr_link
+        "qr_code": qr_link,
+        "branch": area.branch,
     })
     await data.fetch_link('area')
     await data.area.fetch_link("branch")
