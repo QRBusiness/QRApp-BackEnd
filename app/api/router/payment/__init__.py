@@ -1,6 +1,8 @@
+from typing import Optional
+
 import httpx
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependency import login_required, role_required
 from app.common.api_response import Response
@@ -9,12 +11,19 @@ from app.core.decorator import limiter
 from app.db import Mongo
 from app.schema.order import PaymentMethod
 from app.schema.payment import PaymentCreate, PaymentResponse
-from app.service import paymentService, userService
+from app.service import orderService, paymentService, userService
 
 apiRouter = APIRouter(
     tags=["Payment"],
     prefix="/payment",
-    dependencies=[Depends(login_required), Depends(role_required(role=["Admin", "BusinessOwner"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            role_required(
+                role=["Admin", "BusinessOwner"],
+            ),
+        ),
+    ],
 )
 
 
@@ -70,7 +79,12 @@ async def post_banks(data: PaymentCreate, request: Request):
         return Response(data=payment)
 
 
-@apiRouter.delete(path="/my-bank", name="Xóa thông tin thanh toán", response_model=Response[str])
+@apiRouter.delete(
+    path="/my-bank",
+    name="Xóa thông tin thanh toán",
+    response_model=Response[str],
+    deprecated=True,
+)
 async def delete_my_bank(request: Request):
     payment = await paymentService.find_one(
         conditions={
@@ -82,3 +96,30 @@ async def delete_my_bank(request: Request):
     if await paymentService.delete(payment.id):
         return Response(data="Xóa thành công")
     return Response(data="Xóa thất bại")
+
+
+@apiRouter.get(
+    path="/statistics",
+    name="Thống kê doanh số",
+    response_model=Response,
+)
+async def statistics(
+    request: Request,
+    branch: Optional[PydanticObjectId] = Query(default=None, description="Thống kê theo chi nhánh"),
+    area: Optional[PydanticObjectId] = Query(default=None, description="Thống kê theo khu vực"),
+    service_unit: Optional[PydanticObjectId] = Query(default=None, description="Thống kê theo dịch vụ"),
+    staff: Optional[PydanticObjectId] = Query(default=None, description="Thống kê theo nhân viên"),
+    payment_method: Optional[PaymentMethod] = Query(default=None, description="Thống kê theo phương thức thanh toán"),
+):
+    conditions = {
+        "status": "Paid",
+        "business.$id": PydanticObjectId(request.state.user_scope),
+        "branch.$id": branch,
+        "area.$id": area,
+        "service_unit.$id": service_unit,
+        "staff.$id": staff,
+        "payment_method": payment_method,
+    }
+    conditions = {k: v for k, v in conditions.items() if v is not None}
+    orders = await orderService.find_many(conditions)
+    return Response(data=orders)

@@ -57,3 +57,7 @@ class ExtenOrderResponse(BaseModel):
     business: BusinessResponse
     plan: Plan
     status: Optional[OrderStatus] = None
+
+
+class Statistics(BaseModel):
+    orders: List[OrderResponse | ExtenOrderResponse]

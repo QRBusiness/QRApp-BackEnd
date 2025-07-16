@@ -110,8 +110,13 @@ async def post_user(data: Staff, request: Request):
             ),
         ),
     ],
+    deprecated=True,
 )
-async def post_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
+async def post_permission(
+    id: PydanticObjectId,
+    permissions: List[PydanticObjectId],
+    request: Request,
+):
     staff = await userService.find_one(
         conditions={
             "_id": id,  # Tìm theo id
@@ -146,6 +151,7 @@ async def post_permission(id: PydanticObjectId, permissions: List[PydanticObject
             ),
         ),
     ],
+    deprecated=True,
 )
 async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
     staff = await userService.find_one(
