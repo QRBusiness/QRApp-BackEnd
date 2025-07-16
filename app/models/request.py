@@ -8,10 +8,9 @@ from app.models.base import Base
 
 
 class RequestType(str, Enum):
-    ORDER = "Order"  # Dat mon
-    REQUEST = "Request"  # CALL STAFF
-    PAYMENT = "Payment"  # Thanh toan
-    EXTEND = "Extend"  # Gia han
+    ORDER = "Order"
+    REQUEST = "Request"
+    PAYMENT = "Payment"
 
 
 class RequestStatus(str, Enum):
@@ -47,51 +46,37 @@ class Request(Base):
 
     @after_event([Save])
     async def create_order_if_complete(self):
-        if self.status == RequestStatus.COMPLETED:
-            if self.type == RequestType.ORDER:
-                from app.schema.order import OrderCreate
-                from app.service import orderService, productService
+        if self.status == RequestStatus.COMPLETED and self.type == RequestType.ORDER:
+            from app.schema.order import OrderCreate
+            from app.service import orderService, productService
 
-                # Tạo order ở đây
-                product_ids = [PydanticObjectId(product.get("_id")) for product in self.data]
-                products = await productService.find_many(conditions={"_id": {"$in": product_ids}})
-                product_map = {str(product.id): product for product in products}
-                amount = 0
-                for product in self.data:
-                    db_product = product_map.get(product.get("_id"))
-                    variant_price = next(
-                        (v.price for v in db_product.variants if v.type == product.get("variant")),
-                        0,
-                    )
-                    option_price_map = {opt.type: opt.price for opt in db_product.options}
-                    product_options = product.get("options", [])
-                    option_price = sum(option_price_map.get(opt, 0) for opt in product_options)
-                    amount = amount + (variant_price + option_price) * product.get("quantity", 1)
-                for p in self.data:
-                    p["product"] = product_map.get(p.get("_id")).to_ref()
-                    del p["_id"]
-                await orderService.insert(
-                    OrderCreate(
-                        items=self.data,
-                        amount=amount,
-                        business=self.business.to_ref(),
-                        branch=self.branch.to_ref(),
-                        area=self.area.to_ref(),
-                        service_unit=self.service_unit.to_ref(),
-                        staff=self.staff.to_ref(),
-                        request=self.to_ref(),
-                    )
+            # Tạo order ở đây
+            product_ids = [PydanticObjectId(product.get("_id")) for product in self.data]
+            products = await productService.find_many(conditions={"_id": {"$in": product_ids}})
+            product_map = {str(product.id): product for product in products}
+            amount = 0
+            for product in self.data:
+                db_product = product_map.get(product.get("_id"))
+                variant_price = next(
+                    (v.price for v in db_product.variants if v.type == product.get("variant")),
+                    0,
                 )
-            if self.type == RequestType.EXTEND:
-                await orderService.insert(
-                    OrderCreate(
-                        items=self.data,
-                        amount=amount,
-                        business=self.business.to_ref(),
-                        branch=self.branch.to_ref(),
-                        area=self.area.to_ref(),
-                        service_unit=self.service_unit.to_ref(),
-                        staff=self.staff.to_ref(),
-                        request=self.to_ref(),
-                    )
+                option_price_map = {opt.type: opt.price for opt in db_product.options}
+                product_options = product.get("options", [])
+                option_price = sum(option_price_map.get(opt, 0) for opt in product_options)
+                amount = amount + (variant_price + option_price) * product.get("quantity", 1)
+            for p in self.data:
+                p["product"] = product_map.get(p.get("_id")).to_ref()
+                del p["_id"]
+            await orderService.insert(
+                OrderCreate(
+                    items=self.data,
+                    amount=amount,
+                    business=self.business.to_ref(),
+                    branch=self.branch.to_ref(),
+                    area=self.area.to_ref(),
+                    service_unit=self.service_unit.to_ref(),
+                    staff=self.staff.to_ref(),
+                    request=self.to_ref(),
                 )
+            )

@@ -4,7 +4,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
@@ -19,7 +19,7 @@ apiRouter = APIRouter(
     prefix="/business",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin"])),
+        Depends(role_required(role=["Admin"])),
     ],
 )
 
@@ -28,7 +28,7 @@ apiRouter = APIRouter(
     path="",
     name="Danh sách doanh nghiệp",
     status_code=200,
-    dependencies=[Depends(required_permissions(permissions=["view.business"]))],
+    dependencies=[Depends(permission_required(permissions=["view.business"]))],
     response_model=Response[List[BusinessResponse]],
 )
 async def get_businesses(
@@ -52,7 +52,7 @@ async def get_businesses(
     path="/{id}",
     name="Xem doanh nghiệp",
     status_code=200,
-    dependencies=[Depends(required_permissions(permissions=["view.business"]))],
+    dependencies=[Depends(permission_required(permissions=["view.business"]))],
     response_model=Response[FullBusinessResponse],
 )
 async def get_business(id: PydanticObjectId):
@@ -69,7 +69,7 @@ async def get_business(id: PydanticObjectId):
     status_code=200,
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.business",
                 ]
@@ -91,7 +91,7 @@ async def put_business(id: PydanticObjectId, data: BusinessUpdate):
     path="",
     name="Đăng kí doanh nghiệp",
     status_code=201,
-    dependencies=[Depends(required_permissions(permissions=["create.business"]))],
+    dependencies=[Depends(permission_required(permissions=["create.business"]))],
     response_model=Response[FullUserResponse],
 )
 async def post_business(data: BusinessRegister):
@@ -157,7 +157,7 @@ async def post_business(data: BusinessRegister):
 @apiRouter.post(
     path="/extend",
     name="Gia hạn doanh nghiệp",
-    dependencies=[Depends(required_permissions(permissions=["update.business"]))],
+    dependencies=[Depends(permission_required(permissions=["update.business"]))],
     response_model=Response[BusinessResponse],
 )
 async def extend_business(
@@ -181,7 +181,7 @@ async def extend_business(
     name="Mở/Khóa doanh nghiệp",
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.business",
                 ],

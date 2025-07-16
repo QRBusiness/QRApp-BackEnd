@@ -5,7 +5,7 @@ from typing import List, Optional
 from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
@@ -29,12 +29,15 @@ from app.service import (
 )
 from app.socket import manager
 
-apiRouter = APIRouter(tags=["Request"], prefix="/request")
+apiRouter = APIRouter(
+    tags=["Request"],
+    prefix="/request",
+)
 
 
 @apiRouter.get(
     path="/extend",
-    dependencies=[Depends(login_required), Depends(required_role(role=["Admin"]))],
+    dependencies=[Depends(login_required), Depends(role_required(role=["Admin"]))],
     response_model=Response,
 )
 async def get_extends():
@@ -47,12 +50,12 @@ async def get_extends():
     dependencies=[
         Depends(login_required),
         Depends(
-            required_role(
+            role_required(
                 role=["Admin"],
             ),
         ),
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["update.extendorder"],
             ),
         ),
@@ -84,7 +87,12 @@ async def put_extend(id: PydanticObjectId):
 
 @apiRouter.post(
     path="/extend",
-    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            role_required(role=["BusinessOwner"]),
+        ),
+    ],
     response_model=Response[str],
 )
 async def request_extend(
@@ -108,7 +116,12 @@ async def request_extend(
 
 @apiRouter.get(
     path="",
-    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner", "Staff"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            role_required(role=["BusinessOwner", "Staff"]),
+        ),
+    ],
     response_model=Response[List[ResquestResponse]],
 )
 @limiter(max_request=10)
@@ -154,8 +167,16 @@ async def get_requests(
     response_model=Response[MinimumResquestResponse],
 )
 @limiter(max_request=10)
-async def request(data: RequestCreate, request: Request):
-    service_unit = await unitService.find_one(conditions={"_id": data.service_unit, "area.$id": data.area})
+async def request(
+    data: RequestCreate,
+    request: Request,
+):
+    service_unit = await unitService.find_one(
+        conditions={
+            "_id": data.service_unit,
+            "area.$id": data.area,
+        },
+    )
     if service_unit is None:
         raise HTTP_400_BAD_REQUEST("Yêu cầu không phù hợp")
     area = await areaService.find(service_unit.area.to_ref().id)

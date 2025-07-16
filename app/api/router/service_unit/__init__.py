@@ -3,7 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
 from app.db import QRCode
@@ -15,7 +15,7 @@ apiRouter = APIRouter(
     prefix="/services",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner", "Staff"])),
+        Depends(role_required(role=["BusinessOwner", "Staff"])),
     ],
 )
 
@@ -24,7 +24,7 @@ apiRouter = APIRouter(
     path="",
     name="Xem đơn vị dịch vụ",
     response_model=Response[List[ServiceUnitResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.serviceunit"]))],
+    dependencies=[Depends(permission_required(permissions=["view.serviceunit"]))],
 )
 async def get_service(
     request: Request,
@@ -45,7 +45,7 @@ async def get_service(
     name="Tạo đơn vị dịch vụ",
     status_code=201,
     response_model=Response[ServiceUnitResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.serviceunit"]))],
+    dependencies=[Depends(permission_required(permissions=["create.serviceunit"]))],
 )
 async def post_service(
     request: Request,
@@ -88,7 +88,7 @@ async def post_service(
     response_model=Response[ServiceUnitResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["update.serviceunit"],
             ),
         ),
@@ -131,7 +131,7 @@ async def post_qrcode(id: PydanticObjectId, qr_code: UploadFile = File(...)):
     name="Xóa đơn vị dịch vụ",
     response_model=Response,
     dependencies=[
-        Depends(required_permissions(permissions=["delete.serviceunit"])),
+        Depends(permission_required(permissions=["delete.serviceunit"])),
     ],
 )
 async def delete_service(id: PydanticObjectId, request: Request):

@@ -2,7 +2,7 @@ import httpx
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST
 from app.core.decorator import limiter
@@ -14,7 +14,7 @@ from app.service import paymentService, userService
 apiRouter = APIRouter(
     tags=["Payment"],
     prefix="/payment",
-    dependencies=[Depends(login_required), Depends(required_role(role=["Admin", "BusinessOwner"]))],
+    dependencies=[Depends(login_required), Depends(role_required(role=["Admin", "BusinessOwner"]))],
 )
 
 

@@ -3,7 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, role_required
 from app.api.router.area import apiRouter as areaRouter
 from app.api.router.auth import apiRouter as authRouter
 from app.api.router.branch import apiRouter as branchRouter
@@ -46,7 +46,10 @@ api.include_router(orderRouter)
     path="/broadcast",
     tags=["WebSocket"],
     name="Broadcast message",
-    dependencies=[Depends(login_required), Depends(required_role(role=["Admin"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(role_required(role=["Admin"])),
+    ],
     response_model=Response[bool],
 )
 async def broadcast_message(
@@ -83,13 +86,25 @@ async def broadcast_message(
 
 
 # Webhook
-@api.post(tags=["Webhook"], path="/webhook", status_code=200, name="Webhook", response_model=Response)
+@api.post(
+    tags=["Webhook"],
+    path="/webhook",
+    status_code=200,
+    name="Webhook",
+    response_model=Response,
+)
 def receive_webhook():
     return Response(data=True)
 
 
 # Health check
-@api.get(tags=["Health check"], path="/health-check", status_code=200, name="Health Check", response_model=Response)
+@api.get(
+    tags=["Health check"],
+    path="/health-check",
+    status_code=200,
+    name="Health Check",
+    response_model=Response,
+)
 def health_check():
     return Response(data=True)
 

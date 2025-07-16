@@ -1,7 +1,7 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.schema.plan import PlanCreate, PlanResponse, PlanUpdate
@@ -12,7 +12,7 @@ apiRouter = APIRouter(
     prefix="/plan",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin"])),
+        Depends(role_required(role=["Admin"])),
     ],
 )
 

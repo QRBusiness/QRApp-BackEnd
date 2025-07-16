@@ -3,7 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import Mongo
@@ -15,7 +15,7 @@ apiRouter = APIRouter(
     prefix="/areas",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner", "Staff"])),
+        Depends(role_required(role=["BusinessOwner", "Staff"])),
     ],
 )
 
@@ -25,7 +25,7 @@ apiRouter = APIRouter(
     name="Xem khu vực",
     status_code=201,
     response_model=Response[List[AreaResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.area"]))],
+    dependencies=[Depends(permission_required(permissions=["view.area"]))],
 )
 async def view_areas(request: Request, branch: Optional[PydanticObjectId] = Query(default=None)):
     conditions = {
@@ -45,7 +45,7 @@ async def view_areas(request: Request, branch: Optional[PydanticObjectId] = Quer
     name="Tạo khu vực",
     status_code=201,
     response_model=Response[AreaResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.area"]))],
+    dependencies=[Depends(permission_required(permissions=["create.area"]))],
 )
 async def post_area(data: AreaCreate, request: Request):
     business = await businessService.find(request.state.user_scope)
@@ -66,7 +66,7 @@ async def post_area(data: AreaCreate, request: Request):
     name="Sửa thông tin khu vực",
     status_code=200,
     response_model=Response[AreaResponse],
-    dependencies=[Depends(required_permissions(permissions=["update.area"]))],
+    dependencies=[Depends(permission_required(permissions=["update.area"]))],
 )
 async def put_area(id: PydanticObjectId, data: AreaUpdate, request: Request):
     area = await areaService.find(id)
@@ -92,7 +92,7 @@ async def put_area(id: PydanticObjectId, data: AreaUpdate, request: Request):
     name="Xóa khu vực",
     status_code=200,
     response_model=Response,
-    dependencies=[Depends(required_permissions(permissions=["delete.area"]))],
+    dependencies=[Depends(permission_required(permissions=["delete.area"]))],
 )
 async def delete_area(id: PydanticObjectId, request: Request):
     async with areaService.transaction(Mongo.client) as session:

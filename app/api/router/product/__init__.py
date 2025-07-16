@@ -5,7 +5,7 @@ import httpx
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
@@ -109,7 +109,7 @@ private_apiRouter = APIRouter(
     prefix="/products",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner", "Staff"])),
+        Depends(role_required(role=["BusinessOwner", "Staff"])),
     ],
 )
 
@@ -119,7 +119,7 @@ private_apiRouter = APIRouter(
     name="Xem danh sách sản phẩm",
     status_code=200,
     response_model=Response[List[FullProductResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.product"]))],
+    dependencies=[Depends(permission_required(permissions=["view.product"]))],
 )
 async def get_product(
     request: Request,
@@ -140,7 +140,7 @@ async def get_product(
     name="Sản phẩm",
     status_code=201,
     response_model=Response[ProductResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.product"]))],
+    dependencies=[Depends(permission_required(permissions=["create.product"]))],
 )
 async def post_product(data: ProductCreate, request: Request):
     subcategory = await subcategoryService.find(data.sub_category)
@@ -166,7 +166,7 @@ async def post_product(data: ProductCreate, request: Request):
     name="Thêm ảnh cho sản phẩm",
     status_code=200,
     response_model=Response[ProductResponse],
-    dependencies=[Depends(required_permissions(permissions=["update.product"]))],
+    dependencies=[Depends(permission_required(permissions=["update.product"]))],
 )
 async def post_image_product(
     request: Request,
@@ -191,7 +191,7 @@ async def post_image_product(
     name="Sửa thông tin sản phẩm",
     status_code=201,
     response_model=Response[ProductResponse],
-    dependencies=[Depends(required_permissions(permissions=["update.product"]))],
+    dependencies=[Depends(permission_required(permissions=["update.product"]))],
 )
 async def put_product(id: PydanticObjectId, data: ProductUpdate, request: Request):
     product = await productService.find(id)
@@ -206,7 +206,7 @@ async def put_product(id: PydanticObjectId, data: ProductUpdate, request: Reques
     name="Xóa sản phẩm",
     status_code=200,
     response_model=Response,
-    dependencies=[Depends(required_permissions(permissions=["delete.product"]))],
+    dependencies=[Depends(permission_required(permissions=["delete.product"]))],
 )
 async def delete_product(id: PydanticObjectId, request: Request):
     product = await productService.find(id)

@@ -3,7 +3,7 @@ from datetime import datetime
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORZIED, HTTP_403_FORBIDDEN
@@ -140,7 +140,7 @@ async def me(request: Request):
     path="/upload-logo",
     name="Cập nhật logo doanh nghiệp",
     status_code=200,
-    dependencies=[Depends(login_required), Depends(required_role(role=["BusinessOwner"]))],
+    dependencies=[Depends(login_required), Depends(role_required(role=["BusinessOwner"]))],
     response_model=Response[bool],
 )
 async def upload_logo(
@@ -195,7 +195,7 @@ async def upload_avatar(
     dependencies=[
         Depends(login_required),
         Depends(
-            required_role(
+            role_required(
                 role=[
                     "Admin",
                     "BusinessOwner",
@@ -230,7 +230,7 @@ async def my_permission(request: Request):
     response_model_exclude={"data": {"owner"}},
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["BusinessOwner"])),
+        Depends(role_required(role=["BusinessOwner"])),
     ],
 )
 async def my_business(request: Request):

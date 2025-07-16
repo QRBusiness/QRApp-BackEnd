@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
@@ -16,7 +16,7 @@ apiRouter = APIRouter(
     prefix="/users",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin", "BusinessOwner"])),
+        Depends(role_required(role=["Admin", "BusinessOwner"])),
     ],
 )
 
@@ -27,7 +27,7 @@ apiRouter = APIRouter(
     response_model=Response[List[UserResponse]],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["view.user"],
             ),
         ),
@@ -61,7 +61,7 @@ async def get_users(
     response_model=Response[FullUserResponse],
     dependencies=[
         Depends(
-            required_permissions(permissions=["view.user"]),
+            permission_required(permissions=["view.user"]),
         ),
     ],
 )
@@ -81,7 +81,7 @@ async def get_user(id: PydanticObjectId, request: Request):
     path="",
     name="Tạo người dùng/nhân viên",
     response_model=Response[UserResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.user"]))],
+    dependencies=[Depends(permission_required(permissions=["create.user"]))],
 )
 async def post_user(data: Staff, request: Request):
     branch = await branchService.find(data.branch)
@@ -105,7 +105,7 @@ async def post_user(data: Staff, request: Request):
     response_model_exclude={"data": {"group", "business"}},
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["share.permission"],
             ),
         ),
@@ -141,7 +141,7 @@ async def post_permission(id: PydanticObjectId, permissions: List[PydanticObject
     response_model_exclude={"data": {"group", "business"}},
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["share.permission"],
             ),
         ),
@@ -176,7 +176,7 @@ async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObje
     response_model=Response[UserResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.user",
                 ],
@@ -215,7 +215,7 @@ async def put_user(
     response_model=Response[UserResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.user",
                 ],

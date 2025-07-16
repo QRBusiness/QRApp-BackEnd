@@ -4,7 +4,7 @@ import httpx
 from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import login_required, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
@@ -20,7 +20,7 @@ apiRouter = APIRouter(
     dependencies=[
         Depends(login_required),
         Depends(
-            required_role(
+            role_required(
                 role=[
                     "BusinessOwner",
                     "Staff",
@@ -35,6 +35,13 @@ apiRouter = APIRouter(
     path="",
     response_model=Response[List[OrderResponse]],
     name="Danh sách đơn",
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.order"],
+            ),
+        ),
+    ],
 )
 async def get_orders(
     request: Request,
@@ -71,7 +78,11 @@ async def get_orders(
                 id=order.area.to_dict().get("id"),
                 name="Không xác định",
                 branch=(
-                    BranchResponse(id=order.branch.to_dict().get("id"), name="Không xác định", address="Không xác định")
+                    BranchResponse(
+                        id=order.branch.to_dict().get("id"),
+                        name="Không xác định",
+                        address="Không xác định",
+                    )
                     if isinstance(order.branch, Link)
                     else order.branch
                 ),
@@ -83,7 +94,17 @@ async def get_orders(
     return Response(data=orders)
 
 
-@apiRouter.get(path="/{id}", response_model=Response[OrderResponse])
+@apiRouter.get(
+    path="/{id}",
+    response_model=Response[OrderResponse],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.order"],
+            ),
+        ),
+    ],
+)
 async def get_order(
     id: PydanticObjectId,
     request: Request,
@@ -101,11 +122,25 @@ async def get_order(
     return Response(data=order)
 
 
-@apiRouter.post(path="/checkout/{id}", name="Checkout order", response_model=Response[OrderResponse])
+@apiRouter.post(
+    path="/checkout/{id}",
+    name="Checkout order",
+    response_model=Response[OrderResponse],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.order"],
+            ),
+        ),
+    ],
+)
 async def post_orders(
     id: PydanticObjectId,
     request: Request,
-    method: PaymentMethod = Query(default=PaymentMethod.CASH, description="Phương thức thanh toán"),
+    method: PaymentMethod = Query(
+        default=PaymentMethod.CASH,
+        description="Phương thức thanh toán",
+    ),
 ):
     order = await orderService.find(id)
     if order is None:
@@ -130,7 +165,18 @@ async def post_orders(
     return Response(data=order)
 
 
-@apiRouter.get(path="/{id}/qrcode", name="Tạo QR Code cho đơn", response_model=Response)
+@apiRouter.get(
+    path="/{id}/qrcode",
+    name="Tạo QR Code cho đơn",
+    response_model=Response,
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.order"],
+            ),
+        ),
+    ],
+)
 async def gen_qr_for_order(
     id: PydanticObjectId,
     request: Request,

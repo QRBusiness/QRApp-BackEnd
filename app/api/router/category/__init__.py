@@ -3,7 +3,7 @@ from typing import List, Optional
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import Mongo
@@ -24,7 +24,7 @@ apiRouter = APIRouter(
     dependencies=[
         Depends(login_required),
         Depends(
-            required_role(
+            role_required(
                 role=[
                     "BusinessOwner",
                     "Staff",
@@ -40,7 +40,7 @@ apiRouter = APIRouter(
     name="Phân loại sản phẩm",
     status_code=201,
     response_model=Response[CategoryResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.category"]))],
+    dependencies=[Depends(permission_required(permissions=["create.category"]))],
 )
 async def post_category(data: CategoryCreate, request: Request):
     business = await businessService.find(request.state.user_scope)
@@ -57,7 +57,7 @@ async def post_category(data: CategoryCreate, request: Request):
     name="Xem tất cả phân loại",
     status_code=200,
     response_model=Response[List[CategoryResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.category"]))],
+    dependencies=[Depends(permission_required(permissions=["view.category"]))],
 )
 async def get_subcategory(request: Request):
     categories = await categoryService.find_many(
@@ -71,7 +71,7 @@ async def get_subcategory(request: Request):
     name="Xem tất cả chi tiết phân loại",
     status_code=200,
     response_model=Response[List[SubCategoryResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.subcategory"]))],
+    dependencies=[Depends(permission_required(permissions=["view.subcategory"]))],
 )
 async def get_category(request: Request, category: Optional[PydanticObjectId] = Query(default=None)):
     if category:
@@ -99,7 +99,7 @@ async def get_category(request: Request, category: Optional[PydanticObjectId] = 
     response_model=Response[SubCategoryResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.subcategory",
                 ],
@@ -124,7 +124,7 @@ async def put_sub_category(id: PydanticObjectId, data: SubCategoryUpdate, reques
     name="Xem một phân loại",
     status_code=200,
     response_model=Response[FullCategoryResponse],
-    dependencies=[Depends(required_permissions(permissions=["view.subcategory"]))],
+    dependencies=[Depends(permission_required(permissions=["view.subcategory"]))],
 )
 async def view_category(id: PydanticObjectId, request: Request):
     category = await categoryService.find_one(
@@ -152,7 +152,7 @@ async def view_category(id: PydanticObjectId, request: Request):
     response_model=Response[CategoryResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.category",
                 ],
@@ -179,7 +179,7 @@ async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Requ
     name="Xóa phân loại",
     status_code=200,
     response_model=Response[str],
-    dependencies=[Depends(required_permissions(permissions=["delete.category"]))],
+    dependencies=[Depends(permission_required(permissions=["delete.category"]))],
 )
 async def delete_category(id: PydanticObjectId, request: Request):
     async with categoryService.transaction(Mongo.client) as session:
@@ -203,7 +203,7 @@ async def delete_category(id: PydanticObjectId, request: Request):
     name="Phân loại chi tiết",
     status_code=201,
     response_model=Response[SubCategoryResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.subcategory"]))],
+    dependencies=[Depends(permission_required(permissions=["create.subcategory"]))],
 )
 async def post_subcategory(id: PydanticObjectId, data: SubCategoryCreate, request: Request):
     category = await categoryService.find_one(
@@ -226,7 +226,7 @@ async def post_subcategory(id: PydanticObjectId, data: SubCategoryCreate, reques
     name="Xóa phân loại chi tiết",
     status_code=200,
     response_model=Response[str],
-    dependencies=[Depends(required_permissions(permissions=["delete.subcategory"]))],
+    dependencies=[Depends(permission_required(permissions=["delete.subcategory"]))],
 )
 async def delete_subcategory(id: PydanticObjectId, request: Request):
     async with subcategoryService.transaction(Mongo.client) as session:

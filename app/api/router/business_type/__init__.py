@@ -3,7 +3,7 @@ from typing import List
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
@@ -15,7 +15,7 @@ apiRouter = APIRouter(
     prefix="/business-type",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin"])),
+        Depends(role_required(role=["Admin"])),
     ],
 )
 
@@ -24,7 +24,7 @@ apiRouter = APIRouter(
     path="",
     name="Xem danh sách loại doanh nghiệp",
     response_model=Response[List[BusinessTypeResponse]],
-    dependencies=[Depends(required_permissions(permissions=["view.businesstype"]))],
+    dependencies=[Depends(permission_required(permissions=["view.businesstype"]))],
 )
 async def get_business_type(
     page: int = Query(default=1, ge=1),
@@ -42,7 +42,7 @@ async def get_business_type(
     path="",
     name="Tạo loại doanh nghiệp",
     response_model=Response[BusinessTypeResponse],
-    dependencies=[Depends(required_permissions(permissions=["create.businesstype"]))],
+    dependencies=[Depends(permission_required(permissions=["create.businesstype"]))],
 )
 async def post_business_type(data: BusinessTypeCreate | List[BusinessTypeCreate]):
     import re
@@ -59,7 +59,7 @@ async def post_business_type(data: BusinessTypeCreate | List[BusinessTypeCreate]
     response_model=Response[BusinessTypeResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=[
                     "update.businesstype",
                 ],
@@ -84,7 +84,7 @@ async def update_business_type(id: PydanticObjectId, data: BusinessTypeUpdate):
     deprecated=True,
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["delete.businesstype"],
             ),
         ),

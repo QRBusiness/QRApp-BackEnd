@@ -4,7 +4,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.encoders import jsonable_encoder
 
-from app.api.dependency import login_required, required_permissions, required_role
+from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
@@ -17,7 +17,7 @@ apiRouter = APIRouter(
     prefix="/groups",
     dependencies=[
         Depends(login_required),
-        Depends(required_role(role=["Admin", "BusinessOwner"])),
+        Depends(role_required(role=["Admin", "BusinessOwner"])),
     ],
 )
 
@@ -28,7 +28,7 @@ apiRouter = APIRouter(
     response_model=Response[List[GroupResponse]],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["view.group"],
             ),
         ),
@@ -48,7 +48,7 @@ async def get_groups(request: Request):
     response_model_exclude={"data": "business"},
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["view.group"],
             ),
         ),
@@ -70,7 +70,7 @@ async def get_group(id: PydanticObjectId, request: Request):
     response_model=Response[GroupResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["create.group"],
             ),
         ),
@@ -92,7 +92,7 @@ async def post_group(data: GroupCreate, request: Request):
     name="Xóa nhóm",
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["delete.group"],
             ),
         ),
@@ -136,7 +136,7 @@ async def delete_group(id: PydanticObjectId, request: Request):
     response_model=Response[GroupResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["share.permission"],
             ),
         ),
@@ -180,7 +180,7 @@ async def give_permissions(
     response_model=Response[GroupResponse],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["share.permission"],
             ),
         ),
@@ -225,7 +225,7 @@ async def delete_permissions(id: PydanticObjectId, request: Request, data: List[
     response_model=Response[bool],
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["update.user"],
             ),
         ),
@@ -262,7 +262,7 @@ async def add_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str, re
     name="Xóa nhân viên trong nhóm",
     dependencies=[
         Depends(
-            required_permissions(
+            permission_required(
                 permissions=["update.user"],
             ),
         ),

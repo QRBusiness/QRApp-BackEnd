@@ -47,7 +47,7 @@ def login_required(
         ) from e
 
 
-def required_role(role: List[str] = None):
+def role_required(role: List[str] = None):
     def role_checker(request: Request):
         user_role = request.state.user_role
         if role is not None and user_role not in role:
@@ -57,7 +57,7 @@ def required_role(role: List[str] = None):
     return role_checker
 
 
-def required_permissions(permissions: List[int] = None) -> bool:
+def permission_required(permissions: List[int] = None) -> bool:
     def permission_checker(request: Request):
         user_permissions: List[int] = request.state.user_permissions
         if permissions is not None:
@@ -68,4 +68,4 @@ def required_permissions(permissions: List[int] = None) -> bool:
     return permission_checker
 
 
-__all__ = ["login_required", "required_role", "required_permissions"]
+__all__ = ["login_required", "role_required", "permission_required"]
