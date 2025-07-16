@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 import httpx
+import sentry_sdk
 from fastapi import Request
 from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
@@ -48,20 +49,22 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             message = get_message(KeyResponse.SERVER_ERROR)
             if isinstance(e, httpx.ConnectTimeout):
                 message = "Hệ thống đang bận, vui lòng thử lại sau."
-            if isinstance(e, PyMongoError):
+            elif isinstance(e, PyMongoError):
                 message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
-            if isinstance(e, ResponseValidationError):
+            elif isinstance(e, ResponseValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
                 message = [f"{error['msg']} {error['loc']}" for error in e.errors()]
-            if isinstance(e, ValidationError):
+            elif isinstance(e, ValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
                 message = [f"{error['msg']} {error['loc']}" for error in e.errors()]
-            if isinstance(e, DuplicateKeyError):
+            elif isinstance(e, DuplicateKeyError):
                 status_code = 409
                 error = KeyResponse.CONFLICT
                 message = e.details["errmsg"]
+            else:
+                sentry_sdk.capture_exception(e)
             log_data = {
                 "timestamp": request_time.isoformat(),
                 **self._get_request_info(request),

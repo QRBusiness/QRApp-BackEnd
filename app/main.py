@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,14 @@ async def lifespan(_: FastAPI):
     # on_shutdown
 
 
+sentry_sdk.init(
+    dsn="https://133542f745a7150d8828eda864d3c33c@o4509676361023488.ingest.us.sentry.io/4509676365873152",
+    send_default_pii=True,
+    server_name=settings.APP_NAME,
+    release=settings.APP_VERSION,
+    attach_stacktrace=True,
+    spotlight=True,
+)
 app = FastAPI(
     title="QRApp Backend",
     description="""
