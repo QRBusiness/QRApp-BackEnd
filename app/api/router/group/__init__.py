@@ -26,6 +26,13 @@ apiRouter = APIRouter(
     path="",
     name="Xem danh sách nhóm (Thuộc quyền sở hữu)",
     response_model=Response[List[GroupResponse]],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["view.group"],
+            ),
+        ),
+    ],
 )
 async def get_groups(request: Request):
     groups = await groupService.find_many(
@@ -39,6 +46,13 @@ async def get_groups(request: Request):
     name="Xem chi tiết nhóm (Thuộc quyền sở hữu)",
     response_model=Response,
     response_model_exclude={"data": "business"},
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["view.group"],
+            ),
+        ),
+    ],
 )
 async def get_group(id: PydanticObjectId, request: Request):
     group = await groupService.find(id)
@@ -55,7 +69,11 @@ async def get_group(id: PydanticObjectId, request: Request):
     name="Tạo nhóm",
     response_model=Response[GroupResponse],
     dependencies=[
-        Depends(required_permissions(permissions=["create.group"])),
+        Depends(
+            required_permissions(
+                permissions=["create.group"],
+            ),
+        ),
     ],
 )
 async def post_group(data: GroupCreate, request: Request):
@@ -75,9 +93,7 @@ async def post_group(data: GroupCreate, request: Request):
     dependencies=[
         Depends(
             required_permissions(
-                permissions=[
-                    "delete.group",
-                ],
+                permissions=["delete.group"],
             ),
         ),
     ],
@@ -118,6 +134,13 @@ async def delete_group(id: PydanticObjectId, request: Request):
     path="/{id}/permissions",
     name="Cấp quyền",
     response_model=Response[GroupResponse],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["share.permission"],
+            ),
+        ),
+    ],
 )
 async def give_permissions(
     id: PydanticObjectId,
@@ -130,7 +153,7 @@ async def give_permissions(
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
     user = await userService.find(request.state.user_id)
     if user.business.to_ref().id != group.business.to_ref().id:
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
+        raise HTTP_404_NOT_FOUND("Không tìm thấy")
     # Grant permission
     data = data or []
     grant_permissions = await permissionService.find_many(
@@ -155,6 +178,13 @@ async def give_permissions(
     path="/{id}/permissions",
     name="Thu hồi quyền",
     response_model=Response[GroupResponse],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["share.permission"],
+            ),
+        ),
+    ],
 )
 async def delete_permissions(id: PydanticObjectId, request: Request, data: List[PydanticObjectId] | None = None):
     # Check scope
@@ -193,6 +223,13 @@ async def delete_permissions(id: PydanticObjectId, request: Request, data: List[
     name="Thêm nhân viên vào nhóm",
     status_code=200,
     response_model=Response[bool],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["update.user"],
+            ),
+        ),
+    ],
 )
 async def add_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str, request: Request):
     group = await groupService.find(id)
@@ -202,7 +239,12 @@ async def add_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str, re
     current_scope = PydanticObjectId(request.state.user_scope)
     if current_scope != group_scope:
         raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    conditions = {"$or": [{"_id": user_id}, {"username": user_id}]}
+    conditions = {
+        "$or": [
+            {"_id": user_id},
+            {"username": user_id},
+        ],
+    }
     if not PydanticObjectId.is_valid(user_id):
         conditions["$or"] = conditions.get("$or")[1:]
     user = await userService.find_one(conditions)
@@ -218,6 +260,13 @@ async def add_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str, re
 @apiRouter.delete(
     path="/{id}/user/{user_id}",
     name="Xóa nhân viên trong nhóm",
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["update.user"],
+            ),
+        ),
+    ],
 )
 async def delete_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str, request: Request):
     group = await groupService.find(id)
@@ -243,6 +292,10 @@ async def delete_to_group(id: PydanticObjectId, user_id: PydanticObjectId | str,
         raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
     await userService.update_one(
         id=user.id,
-        conditions={"$pull": {"group": group.to_ref()}},
+        conditions={
+            "$pull": {
+                "group": group.to_ref(),
+            },
+        },
     )
     return Response(data=True)

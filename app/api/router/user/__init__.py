@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from app.api.dependency import login_required, required_permissions, required_role
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
-from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.db import SessionManager
 from app.schema.user import FullUserResponse, Staff, UserResponse, UserUpdate
 from app.service import branchService, businessService, permissionService, userService
@@ -59,7 +59,11 @@ async def get_users(
     path="/{id}",
     name="Xem chi tiết",
     response_model=Response[FullUserResponse],
-    dependencies=[Depends(required_permissions(permissions=["view.user"]))],
+    dependencies=[
+        Depends(
+            required_permissions(permissions=["view.user"]),
+        ),
+    ],
 )
 async def get_user(id: PydanticObjectId, request: Request):
     staff = await userService.find(id)
@@ -99,6 +103,13 @@ async def post_user(data: Staff, request: Request):
     name="Cấp quyền cho nhân viên",
     response_model=Response[FullUserResponse],
     response_model_exclude={"data": {"group", "business"}},
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["share.permission"],
+            ),
+        ),
+    ],
 )
 async def post_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
     staff = await userService.find_one(
@@ -125,9 +136,16 @@ async def post_permission(id: PydanticObjectId, permissions: List[PydanticObject
 
 @apiRouter.delete(
     path="/permission/{id}",
-    name="Thu hồi nhân viên",
+    name="Thu hồi quyền nhân viên",
     response_model=Response[FullUserResponse],
     response_model_exclude={"data": {"group", "business"}},
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=["share.permission"],
+            ),
+        ),
+    ],
 )
 async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObjectId], request: Request):
     staff = await userService.find_one(
@@ -156,8 +174,21 @@ async def delete_permission(id: PydanticObjectId, permissions: List[PydanticObje
     path="/{id}",
     name="Sửa thông tin nhân viên/người dùng",
     response_model=Response[UserResponse],
+    dependencies=[
+        Depends(
+            required_permissions(
+                permissions=[
+                    "update.user",
+                ],
+            ),
+        ),
+    ],
 )
-async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
+async def put_user(
+    id: PydanticObjectId,
+    data: UserUpdate,
+    request: Request,
+):
     if request.state.user_role != "Admin":
         user = await userService.find_one(
             {
@@ -173,11 +204,6 @@ async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
         )
         if user is None:
             raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng trong doanh nghiệp của bạn")
-    if user := await userService.find_one(
-        {"phone": data.phone},
-    ):
-        if user.id != id:
-            raise HTTP_409_CONFLICT("Số điện thoại đã được đăng kí")
     user = await userService.update(id, data)
     await user.fetch_all_links()
     return Response(data=user)
@@ -197,7 +223,11 @@ async def put_user(id: PydanticObjectId, data: UserUpdate, request: Request):
         ),
     ],
 )
-async def lock_unlock_user(id: PydanticObjectId, request: Request, task: BackgroundTasks):
+async def lock_unlock_user(
+    id: PydanticObjectId,
+    request: Request,
+    task: BackgroundTasks,
+):
     def remove_session(user_id: str):
         SessionManager.delete(user_id)
 
