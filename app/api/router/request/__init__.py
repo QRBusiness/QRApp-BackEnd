@@ -100,6 +100,8 @@ async def request_extend(
     plan: PydanticObjectId = Form(..., description="Gói đăng kí"),
     image: UploadFile = File(..., description="Ảnh thanh toán"),
 ):
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTP_400_BAD_REQUEST(message="Chỉ chấp nhận JPG, PNG, WEBP.")
     plan = await planService.find(plan)
     if plan is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy gói đăng kí")

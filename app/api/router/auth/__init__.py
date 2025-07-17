@@ -147,12 +147,14 @@ async def upload_logo(
     request: Request,
     logo: UploadFile = File(...),
 ):
+    if logo.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTP_400_BAD_REQUEST(message="Chỉ chấp nhận JPG, PNG, WEBP.")
     contents = await logo.read()
     if len(contents) > 2 * 1024 * 1024:  # 2MB:
         raise HTTP_400_BAD_REQUEST(message="Ảnh vượt quá 2MB")
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"{request.state.user_id}_{logo.filename}",
+        object_name=f"/logo/{request.state.user_id}_{logo.filename}",
         content_type=logo.content_type,
     )
     if not await businessService.update(
@@ -175,12 +177,14 @@ async def upload_avatar(
     request: Request,
     avatar: UploadFile = File(...),
 ):
+    if avatar.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTP_400_BAD_REQUEST(message="Chỉ chấp nhận JPG, PNG, WEBP.")
     contents = await avatar.read()
     if len(contents) > 2 * 1024 * 1024:  # 2MB:
         raise HTTP_400_BAD_REQUEST(message="Ảnh vượt quá 2MB")
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"{request.state.user_id}_{avatar.filename}",
+        object_name=f"/avatar/{request.state.user_id}_{avatar.filename}",
         content_type=avatar.content_type,
     )
     user = await userService.update(id=request.state.user_id, data={"image_url": QRCode.get_url(object_name)})

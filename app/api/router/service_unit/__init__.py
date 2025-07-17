@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
-from app.common.http_exception import HTTP_404_NOT_FOUND
+from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from app.db import QRCode
 from app.schema.service_unit import ServiceUnitResponse, ServiceUnitUpdate
 from app.service import areaService, unitService
@@ -24,7 +24,11 @@ apiRouter = APIRouter(
     path="",
     name="Xem đơn vị dịch vụ",
     response_model=Response[List[ServiceUnitResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.serviceunit"]))],
+    dependencies=[
+        Depends(
+            permission_required(permissions=["view.serviceunit"]),
+        ),
+    ],
 )
 async def get_service(
     request: Request,
@@ -45,7 +49,11 @@ async def get_service(
     name="Tạo đơn vị dịch vụ",
     status_code=201,
     response_model=Response[ServiceUnitResponse],
-    dependencies=[Depends(permission_required(permissions=["create.serviceunit"]))],
+    dependencies=[
+        Depends(
+            permission_required(permissions=["create.serviceunit"]),
+        ),
+    ],
 )
 async def post_service(
     request: Request,
@@ -94,7 +102,11 @@ async def post_service(
         ),
     ],
 )
-async def put_service(id: PydanticObjectId, data: ServiceUnitUpdate, request: Request):
+async def put_service(
+    id: PydanticObjectId,
+    data: ServiceUnitUpdate,
+    request: Request,
+):
     service_unit = await unitService.find(id)
     if service_unit is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
@@ -114,14 +126,24 @@ async def put_service(id: PydanticObjectId, data: ServiceUnitUpdate, request: Re
     name="Cập nhật QRCode",
     response_model=Response[ServiceUnitResponse],
 )
-async def post_qrcode(id: PydanticObjectId, qr_code: UploadFile = File(...)):
+async def post_qrcode(
+    id: PydanticObjectId,
+    qr_code: UploadFile = File(...),
+):
+    if qr_code.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTP_400_BAD_REQUEST(message="Chỉ chấp nhận JPG, PNG, WEBP.")
     contents = await qr_code.read()
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"{id}_{qr_code.filename}",
+        object_name=f"/qrcode/{id}_{qr_code.filename}",
         content_type=qr_code.content_type,
     )
-    service = await unitService.update(id=id, data={"qr_code": QRCode.get_url(object_name)})
+    service = await unitService.update(
+        id=id,
+        data={
+            "qr_code": QRCode.get_url(object_name),
+        },
+    )
     await service.fetch_link("area")
     return Response(data=service)
 

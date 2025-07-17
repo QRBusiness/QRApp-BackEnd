@@ -173,13 +173,15 @@ async def post_image_product(
     id: PydanticObjectId,
     image: UploadFile = File(...),
 ):
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTP_400_BAD_REQUEST(message="Chỉ chấp nhận JPG, PNG, WEBP.")
     product = await productService.find(id)
     if product is None or product.business.to_ref().id != PydanticObjectId(request.state.user_scope):
         raise HTTP_404_NOT_FOUND("Không tìm thấy sản phẩm")
     contents = await image.read()
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"product_{id}_{image.filename}",
+        object_name=f"/product/product_{id}_{image.filename}",
         content_type=image.content_type,
     )
     product = await productService.update(id, {"img_url": QRCode.get_url(object_name)})
