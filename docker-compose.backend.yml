@@ -18,7 +18,8 @@ services:
     ports:
       - 8000:80
     volumes:
-    - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/page:/etc/nginx/page:ro
     depends_on:
       - qrapp-backend
     networks:
