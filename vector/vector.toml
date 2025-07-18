@@ -13,7 +13,7 @@ inputs = ["app_log"]
 source = '''
   # Parse JSON từ field message hoặc toàn bộ log
   structured = parse_json!(.message)
-  
+
   # Thêm các field cần thiết
   .timestamp = structured.timestamp
   .request_id = structured.request_id
@@ -24,10 +24,10 @@ source = '''
   .duration = structured.duration
   .status_code = structured.status_code
   .error = structured.error
-  
+
   # Set level mặc định là info
   .level = "info"
-  
+
   # Giữ lại structured data
   .structured = structured
 '''
