@@ -92,4 +92,4 @@ docker run -p 8000:8000 --env-file .env nhathuyd4hp/qrapp-backend:latest
 ## 📑 Tài liệu
 
 Truy cập Swagger UI tại:
-👉 [http://1037.43.118:8000/docs](http://103.7.43.118:8000/docs)
+👉 [http://103.7.43.118:8000/docs](http://103.7.43.118:8000/docs)
