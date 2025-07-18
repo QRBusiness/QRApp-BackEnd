@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     ACCESS_KEY: str
     REFRESH_KEY: str
     # FrontEnd
-    FRONTEND_HOST: str = "http://localhost:5173"
+    FRONTEND_HOST: str = "*"
     # Database
     MONGO_URL: str | None = None
     MONGO_DATABASE: str = "QRApp"
