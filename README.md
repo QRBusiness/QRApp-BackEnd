@@ -38,6 +38,7 @@ REDIS_URL=
 MINIO_ENDPOINT=
 MINIO_ACCESS_KEY=
 MINIO_SECRET_KEY=
+SENTRY_DSN=
 ```
 
 #### 4. Tạo môi trường ảo và cài dependencies
@@ -76,6 +77,7 @@ REDIS_URL=
 MINIO_ENDPOINT=
 MINIO_ACCESS_KEY=
 MINIO_SECRET_KEY=
+SENTRY_DSN=
 ```
 
 #### 3. Chạy container
@@ -85,7 +87,7 @@ docker run -p 8000:8000 --env-file .env nhathuyd4hp/qrapp-backend:latest
 ```
 
 ## 📑 Monitor
-![Grafana](docs\monitor.png)
+![Grafana](docs/monitor.png)
 
 ## 📑 Tài liệu
 
