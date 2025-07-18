@@ -1,4 +1,25 @@
 services:
+  # --- Vector.dev for log collection ---
+  vector:
+    image: timberio/vector:0.48.0-debian
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - ./logs:/logs:ro
+    restart: unless-stopped
+    command: --config /etc/vector/vector.toml
+    depends_on:
+      - loki
+    networks:
+      - QRNetwork
+  loki:
+    image: grafana/loki:2.9.0
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    restart: unless-stopped
+    networks:
+      - QRNetwork
   # --- cAdvisor: monitor all Docker containers ---
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -41,6 +62,7 @@ services:
 
 volumes:
   grafana_data:
+  loki_data:
 
 networks:
   QRNetwork:

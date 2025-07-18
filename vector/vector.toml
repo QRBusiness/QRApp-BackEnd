@@ -1,0 +1,47 @@
+[sources.app_log]
+type = "file"
+include = ["/logs/app.log"]
+start_at_beginning = true
+ignore_older_secs = 86400
+
+[sources.app_log.encoding]
+charset = "utf-8"
+
+[transforms.parse_json]
+type = "remap"
+inputs = ["app_log"]
+source = '''
+  # Parse JSON từ field message hoặc toàn bộ log
+  structured = parse_json!(.message)
+  
+  # Thêm các field cần thiết
+  .timestamp = structured.timestamp
+  .request_id = structured.request_id
+  .host = structured.host
+  .user_agent = structured.user_agent
+  .method = structured.method
+  .path = structured.path
+  .duration = structured.duration
+  .status_code = structured.status_code
+  .error = structured.error
+  
+  # Set level mặc định là info
+  .level = "info"
+  
+  # Giữ lại structured data
+  .structured = structured
+'''
+
+[sinks.loki]
+type = "loki"
+inputs = ["parse_json"]
+endpoint = "http://loki:3100"
+
+[sinks.loki.encoding]
+codec = "json"
+
+[sinks.loki.labels]
+job = "qrapp"
+level = "{{ level }}"
+method = "{{ method }}"
+status_code = "{{ status_code }}"
