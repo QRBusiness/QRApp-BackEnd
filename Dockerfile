@@ -1,6 +1,8 @@
 # ─────────────── BUILD STAGE ───────────────
 FROM python:3.12-slim AS builder
 
+ARG BUILDKIT_INLINE_CACHE=1
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
