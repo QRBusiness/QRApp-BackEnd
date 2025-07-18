@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.common.api_message import KeyResponse, get_message
@@ -12,6 +12,10 @@ from app.core.security import ACCESS_JWT
 from app.db import SessionManager
 
 security = HTTPBearer(auto_error=False)
+
+
+def language(lang: Literal["en", "vi"] = Query(default="en", description="Ngôn ngữ phản hồi")):
+    return lang
 
 
 def login_required(

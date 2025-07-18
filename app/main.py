@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.dependency import language
 from app.api.router import api
 from app.common.api_message import KeyResponse
 from app.common.http_exception import HTTP_ERROR
@@ -25,7 +26,6 @@ async def lifespan(_: FastAPI):
             server_name=settings.APP_NAME,
             release=settings.APP_VERSION,
             attach_stacktrace=True,
-            spotlight=True,
         )
     await Mongo.initialize()
     yield
@@ -73,6 +73,9 @@ app = FastAPI(
     debug=False,
     lifespan=lifespan,
     version=settings.APP_VERSION,
+    dependencies=[
+        Depends(language),
+    ],
 )
 # Middleware
 app.add_middleware(TraceMiddleware)
