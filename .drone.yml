@@ -44,7 +44,7 @@ steps:
         - git pull origin main || true
         - source .env
         - docker network create QRNetwork || true
-        - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
+        - docker compose -f docker-compose.backend.yml -p qrapp-backend up -d --force-recreate
         - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
         - docker system prune --force
         - docker volume prune --force
