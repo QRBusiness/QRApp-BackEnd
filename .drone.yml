@@ -42,10 +42,9 @@ steps:
         - git restore .
         - git checkout main
         - git pull origin main || true
-        - mkdir -p ./logs
-        - chown -R 1001:1001 ./logs
         - source .env
         - docker network create QRNetwork || true
         - docker compose -f docker-compose.backend.yml -p qrapp-backend up --force-recreate -d
         - docker compose -f docker-compose.monitor.yml -p qrapp-monitor up -d --force-recreate
         - docker system prune --force
+        - docker volume prune --force

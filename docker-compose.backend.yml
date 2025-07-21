@@ -3,8 +3,6 @@ services:
     image: nhathuyd4hp/qrapp-backend:latest
     container_name: api.qrapp
     pull_policy: always
-    # volumes:
-    #   - ./logs:/app/logs
     environment:
       TZ: Asia/Hong_Kong
     env_file:
