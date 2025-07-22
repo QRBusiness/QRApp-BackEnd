@@ -132,7 +132,8 @@ async def change_password(data: ChangePassword, request: Request):
 )
 async def me(request: Request):
     user = await userService.find(request.state.user_id)
-    print(f"Type of user: {type(user)}")
+    user.permissions = [await p.fetch() for p in user.permissions]
+    user.group = [await g.fetch() for g in user.group]
     await user.fetch_all_links()
     return Response(data=user)
 
