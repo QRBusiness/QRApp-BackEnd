@@ -131,10 +131,10 @@ async def change_password(data: ChangePassword, request: Request):
     dependencies=[Depends(login_required)],
 )
 async def me(request: Request):
-    user = await userService.find(request.state.user_id)
-    user.permissions = [await p.fetch() for p in user.permissions]
-    user.group = [await g.fetch() for g in user.group]
-    await user.fetch_all_links()
+    user = await userService.find(
+        request.state.user_id,
+        fetch_links=True,
+    )
     return Response(data=user)
 
 

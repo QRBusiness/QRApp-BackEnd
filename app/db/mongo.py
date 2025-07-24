@@ -2,7 +2,7 @@ from typing import List
 
 from beanie import Document, init_beanie
 from loguru import logger
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo import AsyncMongoClient
 from pymongo.errors import BulkWriteError
 
 from app.core.config import settings
@@ -35,18 +35,13 @@ class MongoDB:
         database: str,
         documents: List[Document],
     ):
-        self.client = AsyncIOMotorClient(
-            url,
-        )
-        self.database = AsyncIOMotorDatabase(
-            client=self.client,
-            name=database,
-        )
+        self.client = AsyncMongoClient(url)
+        self.database = database
         self.documents = documents
 
     async def initialize(self):
         await init_beanie(
-            database=self.database,
+            database=self.client[self.database],
             document_models=self.documents,
         )
         # Init Permission

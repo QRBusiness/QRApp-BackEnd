@@ -148,9 +148,11 @@ async def post_business(data: BusinessRegister):
             ),
             session=session,
         )
-        user = await userService.find_one(
-            {"username": data.username}, session=session, fetch_links=True, projection_model=FullUserResponse
-        )
+    user = await userService.find_one(
+        conditions={"username": data.username},
+        fetch_links=True,
+        projection_model=FullUserResponse,
+    )
     return Response(data=user)
 
 

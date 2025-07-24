@@ -20,11 +20,14 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         id: Any,
         session: AsyncIOMotorClientSession | None = None,
+        fetch_links: bool = False,
     ) -> Optional[ModelType]:
-        return await self.model.get(
+        doc = await self.model.get(
             document_id=id,
             session=session,
+            fetch_links=fetch_links,
         )
+        return doc
 
     # 2. Tìm một document theo điều kiện
     async def find_one(
@@ -158,9 +161,10 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     @staticmethod
     @asynccontextmanager
     async def transaction(client: AsyncIOMotorClient):
-        async with await client.start_session() as session:
+        async with client.start_session() as session:
             try:
-                async with session.start_transaction():
-                    yield session
+                await session.start_transaction()
+                yield session
+                await session.commit_transaction()
             except PyMongoError as e:
                 raise e
