@@ -130,6 +130,7 @@ def refresh_token(data: Session):
     name="Lấy lại mật khẩu",
     response_model=Response[str],
 )
+@limiter(max_request=3, duration=600)
 async def reset_password(data: ResetPassword, request: Request):
     def render_email_template(template_name: str, context: dict) -> str:
         from jinja2 import Environment, FileSystemLoader

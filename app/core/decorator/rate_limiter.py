@@ -34,7 +34,8 @@ def limiter(max_request: int = 5, duration: int = 60):
             if LimitManager.exist(key):
                 count_request = int(LimitManager.get(key))
                 if count_request + 1 > max_request:
-                    raise HTTP_429_TOO_MANY_REQUESTS(f"Quá nhiều yêu cầu. Vui lòng thử lại sau {duration} giây.")
+                    message = f"Quá nhiều yêu cầu. Vui lòng thử lại sau {duration} giây."
+                    raise HTTP_429_TOO_MANY_REQUESTS(message)
                 LimitManager.incr(key)
             else:
                 LimitManager.set(key, 1, ex=duration)
