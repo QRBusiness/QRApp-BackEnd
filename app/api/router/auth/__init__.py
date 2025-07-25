@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi_mail import MessageSchema, MessageType
 
 from app.api.dependency import login_required, role_required
 from app.common.api_message import KeyResponse, get_message
@@ -129,7 +130,7 @@ def refresh_token(data: Session):
     name="Lấy lại mật khẩu",
     response_model=Response[str],
 )
-async def reset_password(data: ResetPassword):
+async def reset_password(data: ResetPassword, request: Request):
     account = await userService.find_one(conditions=data.model_dump())
     if account is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy tài khoản")
@@ -176,7 +177,14 @@ async def reset_password(data: ResetPassword):
     )
     SessionManager.sign_in(user_id, refresh_token)
     reset_path = f"/reset-password?token={access_token}"
-    return Response(data=urljoin(settings.FRONTEND_HOST, reset_path))
+    message = MessageSchema(
+        subject="Reset Password",
+        recipients=[data.email],
+        body=urljoin(settings.FRONTEND_HOST, reset_path),
+        subtype=MessageType.plain,
+    )
+    await settings.SMTP.send_message(message)
+    return Response(data="Yêu cầu đã được xử lí")
 
 
 @apiRouter.post(

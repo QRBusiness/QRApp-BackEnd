@@ -1,6 +1,7 @@
 import os
 from typing import Literal
 
+from fastapi_mail import ConnectionConfig, FastMail
 from loguru import logger
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "QRApp Backend"
     APP_VERSION: str = "0.0.0"
     PAGE_SIZE: int = 10
+    # Email Sender
+    SMTP_HOST: str
+    SMTP_PASSWORD: str
     # Secret
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60
@@ -55,6 +59,22 @@ class Settings(BaseSettings):
             filter=lambda record: "/ws" not in record["message"] and "WebSocket" not in record["message"],
         )
         return self
+
+    @property
+    def SMTP(self) -> FastMail:
+        conf = ConnectionConfig(
+            MAIL_USERNAME=self.SMTP_HOST,
+            MAIL_PASSWORD=self.SMTP_PASSWORD,
+            MAIL_FROM=self.SMTP_HOST,
+            MAIL_FROM_NAME=self.APP_NAME,
+            MAIL_PORT=587,
+            MAIL_SERVER="smtp.gmail.com",
+            MAIL_STARTTLS=True,
+            MAIL_SSL_TLS=False,
+            USE_CREDENTIALS=True,
+            VALIDATE_CERTS=True,
+        )
+        return FastMail(conf)
 
 
 settings = Settings()
