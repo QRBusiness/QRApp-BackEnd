@@ -9,10 +9,10 @@ from app.api.dependency import login_required, permission_required, role_require
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
-from app.db import QRCode
+from app.db import Mongo, QRCode
 from app.schema.category import CategoryResponse, SubCategoryResponse
 from app.schema.plan import PlanResponse
-from app.schema.product import FullProductResponse, ProductCreate, ProductResponse, ProductUpdate
+from app.schema.product import FullProductResponse, Menu, ProductCreate, ProductResponse, ProductUpdate
 from app.schema.user import UserResponse
 from app.service import categoryService, paymentService, planService, productService, subcategoryService, userService
 
@@ -127,7 +127,11 @@ private_apiRouter = APIRouter(
     prefix="/products",
     dependencies=[
         Depends(login_required),
-        Depends(role_required(role=["BusinessOwner", "Staff"])),
+        Depends(
+            role_required(
+                role=["BusinessOwner", "Staff"],
+            ),
+        ),
     ],
 )
 
@@ -154,11 +158,62 @@ async def get_product(
 
 
 @private_apiRouter.post(
+    path="/import",
+    name="Menu sản phẩm",
+    status_code=201,
+    response_model=Response[bool],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["create.product"],
+            ),
+        ),
+    ],
+)
+async def load_menu(menu: Menu, request: Request):
+    from app.models import Category, Product, SubCategory
+
+    business_id = PydanticObjectId(request.state.user_scope)
+    async with productService.transaction(Mongo.client) as session:
+        for cat in menu.categories:
+            category_doc = await Category(
+                name=cat.name,
+                description=cat.description,
+                business=business_id,
+            ).insert(session=session)
+            for sub in cat.subcategories:
+                subcategory_doc = await SubCategory(
+                    name=sub.name,
+                    description=sub.description,
+                    category=category_doc.id,
+                    business=business_id,
+                ).insert(session=session)
+                for prod in sub.products:
+                    await Product(
+                        name=prod.name,
+                        description=prod.description,
+                        variants=prod.variants,
+                        options=prod.options,
+                        img_url=prod.img_url,
+                        category=category_doc.id,
+                        subcategory=subcategory_doc.id,
+                        business=business_id,
+                    ).insert(session=session)
+    return Response(data=True)
+
+
+@private_apiRouter.post(
     path="",
     name="Sản phẩm",
     status_code=201,
     response_model=Response[ProductResponse],
-    dependencies=[Depends(permission_required(permissions=["create.product"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["create.product"],
+            ),
+        ),
+    ],
 )
 async def post_product(data: ProductCreate, request: Request):
     subcategory = await subcategoryService.find(data.sub_category)

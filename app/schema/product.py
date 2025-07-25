@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.product import Option
 from app.schema import BaseResponse
@@ -40,3 +40,28 @@ class FullProductResponse(BaseResponse):
     category: CategoryResponse
     img_url: Optional[str] = None
     # business: BusinessResponse
+
+
+# ----------- Import Menu
+class ProductInMenu(BaseModel):
+    name: str = Field(..., description="Tên sản phẩm")
+    description: Optional[str] = Field(default=None, description="Mô tả sản phẩm")
+    variants: List[Option] = Field(default_factory=list, description="Danh sách biến thể (vd: Size)")
+    options: List[Option] = Field(default_factory=list, description="Tùy chọn thêm (vd: Topping)")
+    img_url: Optional[str] = Field(default=None, description="URL hình ảnh minh họa")
+
+
+class SubCategoryInMenu(BaseModel):
+    name: str = Field(..., description="Tên phân loại chi tiết")
+    description: Optional[str] = Field(default=None, description="Mô tả phân loại")
+    products: List[ProductInMenu] = Field(default_factory=list, description="Danh sách sản phẩm")
+
+
+class CategoryInMenu(BaseModel):
+    name: str = Field(..., description="Tên danh mục")
+    description: Optional[str] = Field(default=None, description="Mô tả danh mục")
+    subcategories: List[SubCategoryInMenu] = Field(default_factory=list, description="Danh sách phân loại chi tiết")
+
+
+class Menu(BaseModel):
+    categories: List[CategoryInMenu] = Field(default_factory=list)
