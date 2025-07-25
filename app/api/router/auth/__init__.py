@@ -189,7 +189,13 @@ async def upload_avatar(
         object_name=f"/avatar/{request.state.user_id}_{avatar.filename}",
         content_type=avatar.content_type,
     )
-    user = await userService.update(id=request.state.user_id, data={"image_url": QRCode.get_url(object_name)})
+    user = await userService.update(
+        id=request.state.user_id,
+        data={
+            "image_url": QRCode.get_url(object_name),
+        },
+    )
+    await user.fetch_link("branch")
     return Response(data=user)
 
 
