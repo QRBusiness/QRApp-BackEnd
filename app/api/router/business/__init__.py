@@ -159,7 +159,13 @@ async def post_business(data: BusinessRegister):
 @apiRouter.post(
     path="/extend",
     name="Gia hạn doanh nghiệp",
-    dependencies=[Depends(permission_required(permissions=["update.business"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.business"],
+            ),
+        ),
+    ],
     response_model=Response[BusinessResponse],
 )
 async def extend_business(

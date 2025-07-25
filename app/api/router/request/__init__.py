@@ -37,11 +37,23 @@ apiRouter = APIRouter(
 
 @apiRouter.get(
     path="/extend",
-    dependencies=[Depends(login_required), Depends(role_required(role=["Admin"]))],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            role_required(
+                role=["Admin"],
+            ),
+        ),
+    ],
     response_model=Response,
 )
-async def get_extends():
-    orders = await extendOrderService.find_many(conditions={})
+async def get_extends(
+    status: Optional[OrderStatus] = Query(default=None, description="Trạng thái thanh toán"),
+):
+    conditions = {}
+    if status:
+        conditions["status"] = status
+    orders = await extendOrderService.find_many(conditions)
     return Response(data=orders)
 
 
