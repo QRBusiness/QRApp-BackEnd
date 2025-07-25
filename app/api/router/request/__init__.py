@@ -201,11 +201,10 @@ async def request(
         # -- Check valid order
         product_ids = [PydanticObjectId(e.get("_id")) for e in data.get("data")]
         products = await productService.find_many(conditions={"_id": {"$in": product_ids}})
-        if len(products) != len(data.get("data")):
-            raise HTTP_400_BAD_REQUEST("Kiểm tra thông tin đơn hàng")
         product_map = {str(product.id): product for product in products}
         for p in data.get("data"):
             db_product = product_map.get(p.get("_id"))
+            print(db_product.variants)
             if p.get("variant") not in [option.type for option in db_product.variants]:
                 raise HTTP_400_BAD_REQUEST("Kiểm tra thông tin đơn hàng")
             if any(opt not in [option.type for option in db_product.options] for opt in p.get("options", [])):
