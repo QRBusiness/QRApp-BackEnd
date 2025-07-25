@@ -47,6 +47,7 @@ async def get_orders(
     request: Request,
     area: Optional[PydanticObjectId] = Query(default=None),
     service_unit: Optional[PydanticObjectId] = Query(default=None),
+    branch: Optional[PydanticObjectId] = Query(default=None),
     status: Optional[OrderStatus] = Query(default=None),
     method: Optional[PaymentMethod] = Query(default=None),
     page: int = Query(default=1, ge=1),
@@ -57,6 +58,9 @@ async def get_orders(
     }
     if request.state.user_branch:
         conditions["branch._id"] = PydanticObjectId(request.state.user_branch)
+    else:
+        if branch:
+            conditions["branch._id"] = branch
     if area:
         conditions["area._id"] = area
     if service_unit:
@@ -65,7 +69,12 @@ async def get_orders(
         conditions["status"] = status
     if method:
         conditions["payment_method"] = method
-    orders = await orderService.find_many(conditions, fetch_links=True, skip=(page - 1) * limit, limit=limit)
+    orders = await orderService.find_many(
+        conditions,
+        fetch_links=True,
+        skip=(page - 1) * limit,
+        limit=limit,
+    )
     for order in orders:
         for item in order.items:
             product = await productService.find(item.get("product").id)
