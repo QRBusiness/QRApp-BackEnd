@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from urllib.parse import urljoin
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Request, UploadFile
@@ -6,13 +7,28 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 from app.api.dependency import login_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
-from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORZIED, HTTP_403_FORBIDDEN
+from app.common.http_exception import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORZIED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+)
+from app.core.config import settings
 from app.core.decorator import limiter
 from app.core.security import ACCESS_JWT, REFRESH_JWT
 from app.db import QRCode, SessionManager
 from app.schema.business import FullBusinessResponse
 from app.schema.permission import PermissionProjection
-from app.schema.user import Auth, ChangePassword, FullUserResponse, Session, Token, UserResponse, UserUpdate
+from app.schema.user import (
+    Auth,
+    ChangePassword,
+    FullUserResponse,
+    ResetPassword,
+    Session,
+    Token,
+    UserResponse,
+    UserUpdate,
+)
 from app.service import businessService, groupService, permissionService, userService
 
 apiRouter = APIRouter(
@@ -106,6 +122,61 @@ def refresh_token(data: Session):
     payload.pop("exp")
     access_token = ACCESS_JWT.encode(payload)
     return Response(data=Token(access_token=access_token, refresh_token=data.refresh_token))
+
+
+@apiRouter.post(
+    path="/reset-password",
+    name="Lấy lại mật khẩu",
+    response_model=Response[str],
+)
+async def reset_password(data: ResetPassword):
+    account = await userService.find_one(conditions=data.model_dump())
+    if account is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy tài khoản")
+    # ---- #
+    user_id = str(account.id)
+    user_role = str(account.role)
+    user_scope = str(account.business.to_ref().id) if account.business else None
+    user_group = [group.to_ref().id for group in account.group] if account.group else []
+    user_permissions = [permission.to_ref().id for permission in account.permissions]
+    # Find Group #
+    if user_group:
+        # Thêm quyền của nhóm vào user_permission
+        group_permissions = set()
+        groups = await groupService.find_many(
+            {"_id": {"$in": user_group}},
+        )
+        for group in groups:
+            group_permissions.update(group.permissions)
+        group_permissions = list(group_permissions)
+        group_permissions = [permission.to_ref().id for permission in group_permissions]
+        # - #
+        user_permissions.extend(group_permissions)
+        user_group = [str(object_id) for object_id in user_group]
+    user_permissions = await permissionService.find_many(
+        {"_id": {"$in": user_permissions}},
+        projection_model=PermissionProjection,
+    )
+    user_permissions = [p.code for p in user_permissions]
+    payload = {
+        "user_id": user_id,
+        "user_scope": user_scope,
+        # "user_group": user_group, Chưa cần dùng đến group
+        "user_branch": account.branch.to_dict().get("id") if account.branch else None,
+        "user_role": user_role,
+        "user_permissions": user_permissions,
+    }
+    access_token = ACCESS_JWT.encode(
+        payload=payload,
+        expires_delta=timedelta(minutes=15),
+    )
+    refresh_token = REFRESH_JWT.encode(
+        payload=payload,
+        expires_delta=timedelta(minutes=15),
+    )
+    SessionManager.sign_in(user_id, refresh_token)
+    reset_path = f"/reset-password?token={access_token}"
+    return Response(data=urljoin(settings.FRONTEND_HOST, reset_path))
 
 
 @apiRouter.post(

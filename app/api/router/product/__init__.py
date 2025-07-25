@@ -13,12 +13,30 @@ from app.db import QRCode
 from app.schema.category import CategoryResponse, SubCategoryResponse
 from app.schema.plan import PlanResponse
 from app.schema.product import FullProductResponse, ProductCreate, ProductResponse, ProductUpdate
-from app.service import categoryService, paymentService, planService, productService, subcategoryService
+from app.schema.user import UserResponse
+from app.service import categoryService, paymentService, planService, productService, subcategoryService, userService
 
 public_apiRouter = APIRouter(tags=["Resource Public"])
 
 
-@public_apiRouter.get(path="/plans", response_model=Response[List[PlanResponse]], name="Danh sách gói gia hạn")
+@public_apiRouter.get(
+    path="/accounts/{email}",
+    response_model=Response[List[UserResponse]],
+    name="Danh sách tài khoản",
+)
+async def find_account_by_email(email: str):
+    accounts = await userService.find_many(
+        conditions={"email": email},
+    )
+    accounts = [UserResponse.model_validate(account).model_dump(exclude={"branch"}) for account in accounts]
+    return Response(data=accounts)
+
+
+@public_apiRouter.get(
+    path="/plans",
+    response_model=Response[List[PlanResponse]],
+    name="Danh sách gói gia hạn",
+)
 async def get_plans():
     payment = await paymentService.find_one({"business.$id": None})
     if payment is None:

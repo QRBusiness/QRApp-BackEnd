@@ -65,9 +65,6 @@ class MongoDB:
                 Administrator(
                     username=settings.ADMIN_USERNAME,
                     password=settings.ADMIN_PASSWORD,
-                    name="Administrator",
-                    phone="Administrator",
-                    address="Administrator",
                 )
             )
         return self

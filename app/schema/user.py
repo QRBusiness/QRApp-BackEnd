@@ -30,6 +30,11 @@ class ChangePassword(BaseModel):
     new_password: str
 
 
+class ResetPassword(BaseModel):
+    email: str
+    username: str
+
+
 class UserCreate(BaseModel):
     username: str
     password: str
@@ -49,6 +54,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    email: Optional[str] = None
 
 
 class Administrator(Auth):
@@ -106,6 +112,7 @@ class BusinessRegister(Auth):
 class FullUserResponse(BaseResponse):
     username: Optional[str] = None
     name: Optional[str] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
     image_url: Optional[str] = None
@@ -121,6 +128,7 @@ class UserResponse(BaseResponse):
     username: Optional[str] = None
     name: Optional[str] = None
     phone: Optional[str] = None
+    email: Optional[str] = None
     address: Optional[str] = None
     image_url: Optional[str] = None
     role: Optional[str] = None
