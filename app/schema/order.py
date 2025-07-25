@@ -43,6 +43,11 @@ class OrderResponse(BaseResponse):
     payment_method: PaymentMethod
 
 
+class Report(BaseModel):
+    total_amount: float
+    total_count: int
+
+
 class ExtenOrderCreate(BaseModel):
     business: Business
     plan: Plan

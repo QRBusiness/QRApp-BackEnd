@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Literal, Optional
 
 import httpx
@@ -10,7 +11,7 @@ from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
 from app.schema.area import AreaResponse
 from app.schema.branch import BranchResponse
-from app.schema.order import OrderResponse, OrderStatus, OrderUpdate, PaymentMethod
+from app.schema.order import OrderResponse, OrderStatus, OrderUpdate, PaymentMethod, Report
 from app.schema.service_unit import ServiceUnitResponse
 from app.service import orderService, paymentService, productService
 
@@ -29,6 +30,88 @@ apiRouter = APIRouter(
         ),
     ],
 )
+
+
+@apiRouter.get(
+    path="/report",
+    response_model=Response[Report],
+    name="Thống kê doanh số",
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.order"],
+            ),
+        ),
+    ],
+)
+async def report(
+    request: Request,
+    branch: Optional[PydanticObjectId] = Query(default=None),
+    area: Optional[PydanticObjectId] = Query(default=None),
+    service_unit: Optional[PydanticObjectId] = Query(default=None),
+    product: Optional[PydanticObjectId] = Query(default=None),
+    staff: Optional[PydanticObjectId] = Query(default=None),
+    method: Optional[PaymentMethod] = Query(default=None),
+    start_date: Optional[datetime] = Query(default=None),
+    end_date: Optional[datetime] = Query(default=None),
+):
+    conditions = {
+        "business._id": PydanticObjectId(request.state.user_scope),
+        "status": OrderStatus.PAID,
+    }
+    if branch:
+        conditions["branch._id"] = branch
+    if area:
+        conditions["area._id"] = area
+    if service_unit:
+        conditions["service_unit._id"] = service_unit
+    if method:
+        conditions["payment_method"] = method
+    if staff:
+        conditions["staff"] = staff
+    if product:
+        conditions["items.product.$id"] = product
+    if start_date and end_date:
+        conditions["created_at"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date:
+        conditions["created_at"] = {"$gte": start_date}
+    elif end_date:
+        conditions["created_at"] = {"$lte": end_date}
+    orders = await orderService.find_many(
+        conditions,
+        fetch_links=True,
+    )
+    for order in orders:
+        for item in order.items:
+            product = await productService.find(item.get("product").id)
+            item["product"] = product
+    for order in orders:
+        if isinstance(order.service_unit, Link):
+            order.service_unit = ServiceUnitResponse(id=order.service_unit.to_dict().get("id"), name="Không xác định")
+        if isinstance(order.area, Link):
+            order.area = AreaResponse(
+                id=order.area.to_dict().get("id"),
+                name="Không xác định",
+                branch=(
+                    BranchResponse(
+                        id=order.branch.to_dict().get("id"),
+                        name="Không xác định",
+                        address="Không xác định",
+                    )
+                    if isinstance(order.branch, Link)
+                    else order.branch
+                ),
+            )
+        if isinstance(order.branch, Link):
+            order.branch = BranchResponse(
+                id=order.branch.to_dict().get("id"), name="Không xác định", address="Không xác định"
+            )
+    return Response(
+        data=Report(
+            total_amount=sum([order.amount for order in orders]),
+            total_count=len(orders),
+        ),
+    )
 
 
 @apiRouter.get(
