@@ -131,6 +131,13 @@ def refresh_token(data: Session):
     response_model=Response[str],
 )
 async def reset_password(data: ResetPassword, request: Request):
+    def render_email_template(template_name: str, context: dict) -> str:
+        from jinja2 import Environment, FileSystemLoader
+
+        env = Environment(loader=FileSystemLoader("app/templates"))
+        template = env.get_template(template_name)
+        return template.render(**context)
+
     account = await userService.find_one(conditions=data.model_dump())
     if account is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy tài khoản")
@@ -176,12 +183,16 @@ async def reset_password(data: ResetPassword, request: Request):
         expires_delta=timedelta(minutes=15),
     )
     SessionManager.sign_in(user_id, refresh_token)
-    reset_path = f"/reset-password?token={access_token}"
+    reset_url = urljoin(settings.FRONTEND_HOST, f"/reset-password?token={access_token}")
+    html_body = render_email_template(
+        "reset_password.html",
+        {"reset_url": reset_url},
+    )
     message = MessageSchema(
         subject="Reset Password",
         recipients=[data.email],
-        body=urljoin(settings.FRONTEND_HOST, reset_path),
-        subtype=MessageType.plain,
+        body=html_body,
+        subtype=MessageType.html,
     )
     await settings.SMTP.send_message(message)
     return Response(data="Yêu cầu đã được xử lí")
