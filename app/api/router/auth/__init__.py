@@ -228,6 +228,7 @@ async def me(request: Request):
     path="/verify-email",
     name="Xác thực email (Redirect 301)",
     status_code=301,
+    include_in_schema=False,
 )
 async def confirm_email(
     token: str = Query(...),
