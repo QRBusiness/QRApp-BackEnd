@@ -33,6 +33,12 @@ class OrderUpdate(BaseModel):
     payment_method: PaymentMethod = Field(default=PaymentMethod.CASH)
 
 
+class MinimumOrderResponse(BaseResponse):
+    items: List[Any]
+    amount: float
+    status: OrderStatus
+
+
 class OrderResponse(BaseResponse):
     items: List[Any]
     status: OrderStatus
@@ -65,5 +71,6 @@ class ExtenOrderResponse(BaseModel):
     status: Optional[OrderStatus] = None
 
 
-class Statistics(BaseModel):
-    orders: List[OrderResponse | ExtenOrderResponse]
+class CheckoutOrder(BaseModel):
+    orders: List[MinimumOrderResponse]
+    qr_code: str

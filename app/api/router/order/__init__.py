@@ -1,17 +1,32 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Literal, Optional
 
 import httpx
 from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
+from jwt.exceptions import ExpiredSignatureError
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Response
-from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
+from app.common.http_exception import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+)
 from app.core.config import settings
+from app.core.security import ACCESS_JWT
+from app.db import Mongo
 from app.schema.area import AreaResponse
 from app.schema.branch import BranchResponse
-from app.schema.order import OrderResponse, OrderStatus, OrderUpdate, PaymentMethod, Report
+from app.schema.order import (
+    CheckoutOrder,
+    MinimumOrderResponse,
+    OrderResponse,
+    OrderStatus,
+    OrderUpdate,
+    PaymentMethod,
+    Report,
+)
 from app.schema.service_unit import ServiceUnitResponse
 from app.service import orderService, paymentService, productService
 
@@ -55,6 +70,8 @@ async def report(
     start_date: Optional[datetime] = Query(default=None),
     end_date: Optional[datetime] = Query(default=None),
 ):
+    if request.state.user_role != "BusinessOwner":
+        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
     conditions = {
         "business._id": PydanticObjectId(request.state.user_scope),
         "status": OrderStatus.PAID,
@@ -188,6 +205,65 @@ async def get_orders(
 
 
 @apiRouter.get(
+    path="/checkout",
+    name="Thông tin đơn hàng",
+    response_model=Response[CheckoutOrder],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.order"],
+            ),
+        ),
+    ],
+)
+async def view_checkout(
+    request: Request,
+    token: str = Query(...),
+    template: Literal["compact2", "compact", "qr_only", "print"] = Query(
+        default="compact", description="Kiểu template QR cần xuất"
+    ),
+):
+    try:
+        payload = ACCESS_JWT.decode(token)
+        if request.state.user_scope != payload.get("business"):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+        orders = [PydanticObjectId(order) for order in payload.get("orders")]
+        orders = await orderService.find_many(
+            conditions={"_id": {"$in": orders}},
+            projection_model=MinimumOrderResponse,
+        )
+        for order in orders:
+            for item in order.items:
+                item["product"] = str(item["product"].id)
+        payment = await paymentService.find_one(
+            conditions={
+                "business.$id": PydanticObjectId(request.state.user_scope),
+            },
+        )
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url="https://api.vietqr.io/v2/generate",
+                json={
+                    "accountNo": payment.accountNo,
+                    "accountName": payment.accountName,
+                    "acqId": payment.acqId,
+                    "amount": order.amount,
+                    "addInfo": "Thanh toán đơn hàng",
+                    "format": "text",
+                    "template": template,
+                },
+            )
+            qr_code = response.json().get("data").get("qrDataURL")
+        data = CheckoutOrder(
+            qr_code=qr_code,
+            orders=orders,
+        )
+        return Response(data=data)
+    except ExpiredSignatureError as e:
+        raise HTTP_400_BAD_REQUEST("Liên kết thanh toán đã hết hạn. Vui lòng tạo lại phiên thanh toán mới.") from e
+
+
+@apiRouter.get(
     path="/{id}",
     response_model=Response[OrderResponse],
     dependencies=[
@@ -216,9 +292,9 @@ async def get_order(
 
 
 @apiRouter.post(
-    path="/checkout/{id}",
-    name="Checkout order",
-    response_model=Response[OrderResponse],
+    path="/checkout",
+    name="Xác nhận đơn hàng",
+    response_model=Response[str],
     dependencies=[
         Depends(
             permission_required(
@@ -228,40 +304,36 @@ async def get_order(
     ],
 )
 async def post_orders(
-    id: PydanticObjectId,
     request: Request,
+    token: str = Query(...),
     method: PaymentMethod = Query(
         default=PaymentMethod.CASH,
         description="Phương thức thanh toán",
     ),
 ):
-    order = await orderService.find(id)
-    if order is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn")
-    if order.business.to_ref().id != PydanticObjectId(request.state.user_scope):
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    if request.state.user_role != "BusinessOwner" and order.branch.to_ref().id != PydanticObjectId(
-        request.state.user_branch
-    ):
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    order = await orderService.update(
-        id=id,
-        data=OrderUpdate(
-            status=OrderStatus.PAID,
-            payment_method=method,
-        ),
-    )
-    for item in order.items:
-        product = await productService.find(item.get("product").id)
-        item["product"] = product
-    await order.fetch_all_links()
-    return Response(data=order)
+    try:
+        payload = ACCESS_JWT.decode(token)
+        if request.state.user_scope != payload.get("business"):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+        async with orderService.transaction(Mongo.client) as session:
+            for oid in payload.get("orders"):
+                await orderService.update(
+                    id=PydanticObjectId(oid),
+                    data=OrderUpdate(
+                        status=OrderStatus.PAID,
+                        payment_method=method,
+                    ),
+                    session=session,
+                )
+        return Response(data="Đơn hàng đã được xử lí")
+    except ExpiredSignatureError as e:
+        raise HTTP_400_BAD_REQUEST("Liên kết thanh toán đã hết hạn. Vui lòng tạo lại phiên thanh toán mới.") from e
 
 
-@apiRouter.get(
-    path="/{id}/qrcode",
-    name="Tạo QR Code cho đơn",
-    response_model=Response,
+@apiRouter.post(
+    path="/qrcode",
+    name="Tổng hợp thông tin đơn hàng",
+    response_model=Response[str],
     dependencies=[
         Depends(
             permission_required(
@@ -270,35 +342,27 @@ async def post_orders(
         ),
     ],
 )
-async def gen_qr_for_order(
-    id: PydanticObjectId,
+async def gen_qr_for_orders(
     request: Request,
-    template: Literal["compact2", "compact", "qr_only", "print"] = Query(
-        default="compact", description="Kiểu template QR cần xuất"
-    ),
+    orders: List[PydanticObjectId],
 ):
-    order = await orderService.find(id)
-    if order is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn")
-    if order.business.to_ref().id != PydanticObjectId(request.state.user_scope):
-        raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    if order.branch.to_ref().id != PydanticObjectId(request.state.user_branch):
-        if request.state.user_role != "BusinessOwner":
-            raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-    payment = await paymentService.find_one(conditions={"business.$id": order.business.to_ref().id})
-    if payment is None:
-        raise HTTP_404_NOT_FOUND("Yêu cầu thêm tài khoản ngân hàng")
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            url="https://api.vietqr.io/v2/generate",
-            json={
-                "accountNo": payment.accountNo,
-                "accountName": payment.accountName,
-                "acqId": payment.acqId,
-                "amount": order.amount,
-                "addInfo": f"Thanh toán đơn hàng {order.id}",
-                "format": "text",
-                "template": template,
-            },
-        )
-        return Response(data=response.json())
+    orders = await orderService.find_many(
+        conditions={
+            "_id": {"$in": orders},
+            "business.$id": PydanticObjectId(request.state.user_scope),
+            "status": OrderStatus.UNPAID,
+        }
+    )
+    if not orders:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+    payload = {
+        "orders": [str(order.id) for order in orders],
+        "business": request.state.user_scope,
+        "branch": request.state.user_branch,
+        "action": "checkout",
+    }
+    token = ACCESS_JWT.encode(
+        payload=payload,
+        expires_delta=timedelta(minutes=60),
+    )
+    return Response(data=token)

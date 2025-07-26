@@ -19,7 +19,7 @@ class User(Base):
     password: str = Field(nullable=False)
     name: Optional[str] = Field(default=None, nullable=True)
     phone: Optional[str] = Field(default=None, nullable=True)
-    email: Optional[str] = Field(default=None)
+    email: Optional[str] = Field(default=None, pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
     address: Optional[str] = Field(default=None, nullable=True)
     image_url: Optional[str] = Field(default=None)
     role: Literal["Admin", "BusinessOwner", "Staff"] = Field(default="Staff")

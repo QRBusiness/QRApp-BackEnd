@@ -20,7 +20,7 @@ MessageResponse = {
         KeyResponse.SUCCESS: "Thành công",
         KeyResponse.USERNAME_CONFLICT: "username đã được sử dụng",
         KeyResponse.PHONE_CONFLICT: "Số điện thoại đã được sử dụng",
-        KeyResponse.UNAUTHORIZED: "Đăng nhập để sử dụng",
+        KeyResponse.UNAUTHORIZED: "Yêu cầu đăng nhập",
         KeyResponse.INVALID_CREDENTIALS: "Tên đăng nhập hoặc mật khẩu không chính xác",
         KeyResponse.INVALID_TOKEN: "Token không hợp lệ",
         KeyResponse.SESSION_EXPIRED: "Session không hợp lệ",
