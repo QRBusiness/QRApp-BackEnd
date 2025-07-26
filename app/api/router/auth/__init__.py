@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFile
 from fastapi_mail import MessageSchema, MessageType
 
 from app.api.dependency import login_required, role_required
@@ -24,6 +24,7 @@ from app.schema.user import (
     Auth,
     ChangePassword,
     FullUserResponse,
+    NewPassword,
     ResetPassword,
     Session,
     Token,
@@ -131,7 +132,11 @@ def refresh_token(data: Session):
     response_model=Response[str],
 )
 @limiter(max_request=3, duration=600)
-async def reset_password(data: ResetPassword, request: Request):
+async def post_reset_password(
+    request: Request,
+    data: ResetPassword,
+    background_tasks: BackgroundTasks,
+):
     def render_email_template(template_name: str, context: dict) -> str:
         from jinja2 import Environment, FileSystemLoader
 
@@ -144,46 +149,14 @@ async def reset_password(data: ResetPassword, request: Request):
         raise HTTP_404_NOT_FOUND("Không tìm thấy tài khoản")
     # ---- #
     user_id = str(account.id)
-    user_role = str(account.role)
-    user_scope = str(account.business.to_ref().id) if account.business else None
-    user_group = [group.to_ref().id for group in account.group] if account.group else []
-    user_permissions = [permission.to_ref().id for permission in account.permissions]
-    # Find Group #
-    if user_group:
-        # Thêm quyền của nhóm vào user_permission
-        group_permissions = set()
-        groups = await groupService.find_many(
-            {"_id": {"$in": user_group}},
-        )
-        for group in groups:
-            group_permissions.update(group.permissions)
-        group_permissions = list(group_permissions)
-        group_permissions = [permission.to_ref().id for permission in group_permissions]
-        # - #
-        user_permissions.extend(group_permissions)
-        user_group = [str(object_id) for object_id in user_group]
-    user_permissions = await permissionService.find_many(
-        {"_id": {"$in": user_permissions}},
-        projection_model=PermissionProjection,
-    )
-    user_permissions = [p.code for p in user_permissions]
     payload = {
         "user_id": user_id,
-        "user_scope": user_scope,
-        # "user_group": user_group, Chưa cần dùng đến group
-        "user_branch": account.branch.to_dict().get("id") if account.branch else None,
-        "user_role": user_role,
-        "user_permissions": user_permissions,
+        "action": "reset-password",
     }
     access_token = ACCESS_JWT.encode(
         payload=payload,
         expires_delta=timedelta(minutes=15),
     )
-    refresh_token = REFRESH_JWT.encode(
-        payload=payload,
-        expires_delta=timedelta(minutes=15),
-    )
-    SessionManager.sign_in(user_id, refresh_token)
     reset_url = urljoin(settings.FRONTEND_HOST, f"/reset-password?token={access_token}")
     html_body = render_email_template(
         "reset_password.html",
@@ -195,8 +168,28 @@ async def reset_password(data: ResetPassword, request: Request):
         body=html_body,
         subtype=MessageType.html,
     )
-    await settings.SMTP.send_message(message)
+    background_tasks.add_task(
+        settings.SMTP.send_message,
+        message,
+    )
     return Response(data="Yêu cầu đã được xử lí")
+
+
+@apiRouter.put(
+    path="/reset-password",
+    name="Đặt lại lại mật khẩu",
+    response_model=Response[bool],
+)
+async def put_reset_password(data: NewPassword):
+    payload = ACCESS_JWT.decode(data.token)
+    if payload.get("action", "") != "reset-password":
+        raise HTTP_400_BAD_REQUEST("Token không hợp lệ")
+    user = await userService.find(payload.get("user_id"))
+    if user is None:
+        raise HTTP_404_NOT_FOUND("Người dùng không tồn tại")
+    user = user.change_password(data.password)
+    await user.save()
+    return Response(data=True)
 
 
 @apiRouter.post(

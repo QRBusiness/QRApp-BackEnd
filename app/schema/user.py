@@ -35,6 +35,11 @@ class ResetPassword(BaseModel):
     username: str
 
 
+class NewPassword(BaseModel):
+    token: str
+    password: str
+
+
 class UserCreate(BaseModel):
     username: str
     password: str
@@ -83,6 +88,7 @@ class Staff(Auth):
     name: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    email: Optional[str] = None
     branch: PydanticObjectId
 
     @computed_field(return_type=str)

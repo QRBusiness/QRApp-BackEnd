@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
-from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
+from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import SessionManager
 from app.schema.user import FullUserResponse, Staff, UserResponse, UserUpdate
 from app.service import branchService, businessService, permissionService, userService
@@ -84,11 +84,13 @@ async def get_user(id: PydanticObjectId, request: Request):
     dependencies=[Depends(permission_required(permissions=["create.user"]))],
 )
 async def post_user(data: Staff, request: Request):
-    branch = await branchService.find(data.branch)
+    branch = await branchService.find_one(
+        conditions={"_id": PydanticObjectId(data.branch), "business.$id": PydanticObjectId(request.state.user_scope)}
+    )
     if branch is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy chi nhánh")
-    if str(branch.business.to_ref().id) != request.state.user_scope:
-        raise HTTP_403_FORBIDDEN("Chi nhánh không tồn tại trong doanh nghiệp của bạn")
+    if await userService.find_one(conditions={"username": data.username}):
+        raise HTTP_409_CONFLICT("Tên đăng nhập đã được sử dụng")
     data = data.model_dump()
     user_scope = request.state.user_scope
     business = await businessService.find(user_scope)

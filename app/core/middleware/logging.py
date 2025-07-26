@@ -49,8 +49,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             message = get_message(KeyResponse.SERVER_ERROR)
             if isinstance(e, httpx.ConnectTimeout):
                 message = "Hệ thống đang bận, vui lòng thử lại sau."
-            elif isinstance(e, PyMongoError):
-                message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
             elif isinstance(e, ResponseValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
@@ -63,6 +61,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 status_code = 409
                 error = KeyResponse.CONFLICT
                 message = e.details["errmsg"]
+            elif isinstance(e, PyMongoError):
+                message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
             else:
                 sentry_sdk.capture_exception(e)
             log_data = {
