@@ -253,6 +253,7 @@ async def confirm_email(
     response_model=Response[str],
     dependencies=[Depends(login_required)],
 )
+@limiter(max_request=1, duration=1800)
 async def verify_email(request: Request, task: BackgroundTasks):
     def render_email_template(template_name: str, context: dict) -> str:
         from jinja2 import Environment, FileSystemLoader
