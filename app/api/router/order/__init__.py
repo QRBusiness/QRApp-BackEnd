@@ -332,7 +332,7 @@ async def post_orders(
 
 @apiRouter.post(
     path="/qrcode",
-    name="Tổng hợp thông tin đơn hàng",
+    name="Tổng hợp đơn hàng",
     response_model=Response[str],
     dependencies=[
         Depends(
