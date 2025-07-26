@@ -26,7 +26,10 @@ public_apiRouter = APIRouter(tags=["Resource Public"])
 )
 async def find_account_by_email(email: str):
     accounts = await userService.find_many(
-        conditions={"email": email},
+        conditions={
+            "email": email,
+            "email_verified": True,
+        },
     )
     accounts = [UserResponse.model_validate(account).model_dump(exclude={"branch"}) for account in accounts]
     return Response(data=accounts)

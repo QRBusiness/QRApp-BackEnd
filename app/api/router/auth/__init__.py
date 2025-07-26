@@ -147,7 +147,7 @@ async def post_reset_password(
         return template.render(**context)
 
     account = await userService.find_one(conditions=data.model_dump())
-    if account is None:
+    if account is None or not account.email_verified:
         raise HTTP_404_NOT_FOUND("Không tìm thấy tài khoản")
     # ---- #
     user_id = str(account.id)
