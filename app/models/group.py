@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from beanie import Link
 from pydantic import Field
+from pymongo import IndexModel
 
 from app.models.business import Business
 from app.models.permission import Permission
@@ -16,3 +17,14 @@ class Group(Base):
     permissions: List[Link[Permission]] = Field(
         default_factory=list,
     )
+
+    class Settings:
+        indexes = [
+            IndexModel(
+                [
+                    ("name", 1),
+                    ("business", 1),
+                ],
+                unique=True,
+            )
+        ]

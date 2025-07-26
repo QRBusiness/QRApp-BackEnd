@@ -2,6 +2,7 @@ from typing import Optional
 
 from beanie import Link
 from pydantic import Field
+from pymongo import IndexModel
 
 from app.models.base import Base
 from app.models.branch import Branch
@@ -17,3 +18,15 @@ class Area(Base):
     image_url: Optional[str] = Field(None, description="Đường dẫn ảnh minh họa khu vực (nếu có)")
     branch: Link[Branch] = Field(..., description="Chi nhánh sở hữu")
     business: Link[Business] = Field(..., description="Doanh nghiệp sở hữu khu vực này")
+
+    class Settings:
+        indexes = [
+            IndexModel(
+                [
+                    ("name", 1),
+                    ("branch", 1),
+                    ("business", 1),
+                ],
+                unique=True,
+            )
+        ]

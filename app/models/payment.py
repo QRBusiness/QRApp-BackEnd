@@ -2,6 +2,7 @@ from typing import Optional
 
 from beanie import Link
 from pydantic import Field
+from pymongo import IndexModel
 
 from app.models import Business
 
@@ -23,3 +24,8 @@ class Payment(Base):
         description="Tên tài khoản ngân hàng",
     )
     acqId: int = Field(..., ge=100000, le=999999, description="Mã định danh ngân hàng")
+
+    class Settings:
+        indexes = [
+            IndexModel([("name", 1)], unique=True),
+        ]
