@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from beanie import Link
 from pydantic import BaseModel, Field
+from pymongo import IndexModel
 
 from app.models import Business, Category, SubCategory
 
@@ -26,3 +27,14 @@ class Product(Base):
     category: Link[Category]
     subcategory: Link[SubCategory]
     business: Link[Business]
+
+    class Settings:
+        indexes = [
+            IndexModel(
+                [
+                    ("name", 1),
+                    ("business", 1),
+                ],
+                unique=True,
+            )
+        ]
