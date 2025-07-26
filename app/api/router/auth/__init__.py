@@ -223,6 +223,43 @@ async def me(request: Request):
 
 
 @apiRouter.post(
+    path="/verify-email",
+    name="Xác thực email",
+    status_code=200,
+    response_model=Response[str],
+    dependencies=[Depends(login_required)],
+)
+async def verify_email(request: Request, task: BackgroundTasks):
+    def render_email_template(template_name: str, context: dict) -> str:
+        from jinja2 import Environment, FileSystemLoader
+
+        env = Environment(loader=FileSystemLoader("app/templates"))
+        template = env.get_template(template_name)
+        return template.render(**context)
+
+    user = await userService.find(request.state.user_id)
+    if user.email is None:
+        raise HTTP_400_BAD_REQUEST("Email chưa được thiết lập.")
+    if user.email_verified:
+        raise HTTP_400_BAD_REQUEST("Email đã xác minh")
+    task.add_task(
+        settings.SMTP.send_message,
+        MessageSchema(
+            subject="Email Verification",
+            recipients=[user.email],
+            body=render_email_template(
+                "email_verification.html",
+                {
+                    "verify_url": "https://www.youtube.com/",
+                },
+            ),
+            subtype=MessageType.html,
+        ),
+    )
+    return Response(data="Yêu cầu đã được xử lí")
+
+
+@apiRouter.post(
     path="/upload-logo",
     name="Cập nhật logo doanh nghiệp",
     status_code=200,

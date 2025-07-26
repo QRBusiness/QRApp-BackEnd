@@ -2,11 +2,13 @@ from typing import List, Literal, Optional
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
+from fastapi_mail import MessageSchema, MessageType
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.core.config import settings
 from app.db import SessionManager
 from app.schema.user import FullUserResponse, Staff, UserResponse, UserUpdate
 from app.service import branchService, businessService, permissionService, userService
@@ -83,7 +85,18 @@ async def get_user(id: PydanticObjectId, request: Request):
     response_model=Response[UserResponse],
     dependencies=[Depends(permission_required(permissions=["create.user"]))],
 )
-async def post_user(data: Staff, request: Request):
+async def post_user(
+    data: Staff,
+    request: Request,
+    task: BackgroundTasks,
+):
+    def render_email_template(template_name: str, context: dict) -> str:
+        from jinja2 import Environment, FileSystemLoader
+
+        env = Environment(loader=FileSystemLoader("app/templates"))
+        template = env.get_template(template_name)
+        return template.render(**context)
+
     branch = await branchService.find_one(
         conditions={"_id": PydanticObjectId(data.branch), "business.$id": PydanticObjectId(request.state.user_scope)}
     )
@@ -97,6 +110,22 @@ async def post_user(data: Staff, request: Request):
     data["business"] = business
     data["branch"] = branch
     staff = await userService.insert(data)
+    html_body = render_email_template(
+        "email_verification.html",
+        {
+            "verify_url": "https://www.youtube.com/",
+        },
+    )
+    if staff.email:
+        task.add_task(
+            settings.SMTP.send_message,
+            MessageSchema(
+                subject="Email Verification",
+                recipients=[staff.email],
+                body=html_body,
+                subtype=MessageType.html,
+            ),
+        )
     return Response(data=staff)
 
 
@@ -244,7 +273,12 @@ async def lock_unlock_user(
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
     user_request_scope = request.state.user_scope
     if user_request_scope is None or user_request_scope == str(user.business.to_ref().id):
-        user = await userService.update(id=id, data={"available": not user.available})
+        user = await userService.update(
+            id=id,
+            data={
+                "available": not user.available,
+            },
+        )
         task.add_task(remove_session, str(id))
         return Response(data=user)
     raise HTTP_403_FORBIDDEN(get_message(KeyResponse.PERMISSION_DENIED))

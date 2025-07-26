@@ -135,6 +135,7 @@ class UserResponse(BaseResponse):
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    email_verified: bool
     address: Optional[str] = None
     image_url: Optional[str] = None
     role: Optional[str] = None
