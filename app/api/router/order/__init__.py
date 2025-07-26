@@ -108,6 +108,7 @@ async def report(
             )
     return Response(
         data=Report(
+            orders=orders,
             total_amount=sum([order.amount for order in orders]),
             total_count=len(orders),
         ),

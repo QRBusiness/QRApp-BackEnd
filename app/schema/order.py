@@ -44,6 +44,7 @@ class OrderResponse(BaseResponse):
 
 
 class Report(BaseModel):
+    orders: List[OrderResponse]
     total_amount: float
     total_count: int
 
