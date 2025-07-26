@@ -2,8 +2,10 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, Request, UploadFile
+from fastapi.responses import RedirectResponse
 from fastapi_mail import MessageSchema, MessageType
+from jwt.exceptions import ExpiredSignatureError
 
 from app.api.dependency import login_required, role_required
 from app.common.api_message import KeyResponse, get_message
@@ -222,6 +224,27 @@ async def me(request: Request):
     return Response(data=user)
 
 
+@apiRouter.get(
+    path="/verify-email",
+    name="Xác thực email (Redirect 301)",
+    status_code=200,
+)
+async def confirm_email(
+    token: str = Query(...),
+):
+    try:
+        payload = ACCESS_JWT.decode(token)
+        await userService.update(
+            id=payload.get("user_id"),
+            data={
+                "email_verified": True,
+            },
+        )
+        return RedirectResponse(url=settings.FRONTEND_HOST, status_code=302)
+    except ExpiredSignatureError as e:
+        raise HTTP_400_BAD_REQUEST("Thời gian xác minh hết hạn.") from e
+
+
 @apiRouter.post(
     path="/verify-email",
     name="Xác thực email",
@@ -242,6 +265,14 @@ async def verify_email(request: Request, task: BackgroundTasks):
         raise HTTP_400_BAD_REQUEST("Email chưa được thiết lập.")
     if user.email_verified:
         raise HTTP_400_BAD_REQUEST("Email đã xác minh")
+    token = ACCESS_JWT.encode(
+        payload={
+            "user_id": str(user.id),
+            "action": "verify-email",
+        },
+        expires_delta=timedelta(minutes=30),
+    )
+    verify_url = urljoin(base=str(request.base_url), url=f"verify-email?token={token}")
     task.add_task(
         settings.SMTP.send_message,
         MessageSchema(
@@ -249,9 +280,7 @@ async def verify_email(request: Request, task: BackgroundTasks):
             recipients=[user.email],
             body=render_email_template(
                 "email_verification.html",
-                {
-                    "verify_url": "https://www.youtube.com/",
-                },
+                {"verify_url": verify_url},
             ),
             subtype=MessageType.html,
         ),
