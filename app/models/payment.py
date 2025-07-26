@@ -27,5 +27,5 @@ class Payment(Base):
 
     class Settings:
         indexes = [
-            IndexModel([("name", 1)], unique=True),
+            IndexModel([("business", 1)], unique=True),
         ]

@@ -36,10 +36,16 @@ async def get_banks(request: Request):
 
 @apiRouter.get(path="/methods", name="Xem phương thức thanh toán", response_model=Response)
 async def get_method():
-    return Response(data=[{"name": method.name, "description": method.description()} for method in PaymentMethod])
+    return Response(
+        data=[{"name": method.name, "description": method.description()} for method in PaymentMethod],
+    )
 
 
-@apiRouter.get(path="/my-bank", name="Xem thông tin thanh toán", response_model=Response[PaymentResponse])
+@apiRouter.get(
+    path="/my-bank",
+    name="Xem thông tin thanh toán",
+    response_model=Response[PaymentResponse],
+)
 async def get_my_bank(request: Request):
     payment = await paymentService.find_one(
         conditions={
@@ -51,7 +57,7 @@ async def get_my_bank(request: Request):
 
 @apiRouter.post(
     path="/banks",
-    name="Thêm tài khoản ngân hàng",
+    name="Cập nhật tài khoản ngân hàng",
     status_code=201,
     response_model=Response[PaymentResponse],
 )
@@ -59,11 +65,13 @@ async def post_banks(data: PaymentCreate, request: Request):
     async with userService.transaction(Mongo.client) as session:
         business = PydanticObjectId(request.state.user_scope) if request.state.user_role != "Admin" else None
         payment = await paymentService.find_one(
-            conditions={"business.$id": business},
+            conditions={
+                "business.$id": business,
+            },
             session=session,
         )
         if payment:
-            await paymentService.delete(payment.id)
+            await paymentService.delete(id=payment.id, session=session)
         user = await userService.find(
             id=request.state.user_id,
             session=session,
