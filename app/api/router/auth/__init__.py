@@ -227,7 +227,7 @@ async def me(request: Request):
 @apiRouter.get(
     path="/verify-email",
     name="Xác thực email (Redirect 301)",
-    status_code=200,
+    status_code=301,
 )
 async def confirm_email(
     token: str = Query(...),
@@ -240,7 +240,7 @@ async def confirm_email(
                 "email_verified": True,
             },
         )
-        return RedirectResponse(url=settings.FRONTEND_HOST, status_code=302)
+        return RedirectResponse(url=settings.FRONTEND_HOST, status_code=301)
     except ExpiredSignatureError as e:
         raise HTTP_400_BAD_REQUEST("Thời gian xác minh hết hạn.") from e
 
