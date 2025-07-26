@@ -273,7 +273,7 @@ async def verify_email(request: Request, task: BackgroundTasks):
         },
         expires_delta=timedelta(minutes=30),
     )
-    verify_url = urljoin(base=str(request.base_url), url=f"verify-email?token={token}")
+    verify_url = urljoin(base=settings.BASE_URL, url=f"verify-email?token={token}")
     task.add_task(
         settings.SMTP.send_message,
         MessageSchema(

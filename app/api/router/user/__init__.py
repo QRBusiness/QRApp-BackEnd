@@ -110,13 +110,24 @@ async def post_user(
     data["business"] = business
     data["branch"] = branch
     staff = await userService.insert(data)
-    html_body = render_email_template(
-        "email_verification.html",
-        {
-            "verify_url": "https://www.youtube.com/",
-        },
-    )
     if staff.email:
+        from datetime import timedelta
+        from urllib.parse import urljoin
+
+        from app.core.security import ACCESS_JWT
+
+        token = ACCESS_JWT.encode(
+            payload={
+                "user_id": str(staff.id),
+                "action": "verify-email",
+            },
+            expires_delta=timedelta(minutes=30),
+        )
+        verify_url = urljoin(base=settings.BASE_URL, url=f"verify-email?token={token}")
+        html_body = render_email_template(
+            "email_verification.html",
+            {"verify_url": verify_url},
+        )
         task.add_task(
             settings.SMTP.send_message,
             MessageSchema(

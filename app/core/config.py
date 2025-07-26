@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "QRApp Backend"
     APP_VERSION: str = "0.0.0"
     PAGE_SIZE: int = 10
+    BASE_URL: str = "http://127.0.0.1:8000"
     # Email Sender
     SMTP_HOST: str
     SMTP_PASSWORD: str
