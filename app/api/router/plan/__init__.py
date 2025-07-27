@@ -43,7 +43,17 @@ async def put_plan(id: PydanticObjectId, data: PlanUpdate):
     if plan is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy gói")
     if await planService.find_one(
-        {"$and": [{"_id": {"$ne": id}}, {"$or": [{"name": data.name}, {"period": data.period}]}]}
+        {
+            "$and": [
+                {"_id": {"$ne": id}},
+                {
+                    "$or": [
+                        {"name": data.name},
+                        {"period": data.period},
+                    ],
+                },
+            ],
+        }
     ):  # loại trừ chính nó
         raise HTTP_409_CONFLICT("Gói đã tồn tại")
     plan = await planService.update(id, data)
