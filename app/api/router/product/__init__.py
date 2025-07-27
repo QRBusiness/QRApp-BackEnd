@@ -23,6 +23,7 @@ public_apiRouter = APIRouter(tags=["Resource Public"])
     path="/accounts/{email}",
     response_model=Response[List[UserResponse]],
     name="Danh sách tài khoản",
+    response_model_exclude={"data": {"__all__": {"branch"}}},
 )
 async def find_account_by_email(email: str):
     accounts = await userService.find_many(
@@ -31,7 +32,7 @@ async def find_account_by_email(email: str):
             "email_verified": True,
         },
     )
-    accounts = [UserResponse.model_validate(account).model_dump(exclude={"branch"}) for account in accounts]
+    accounts = [account.model_dump(exclude={"branch"}) for account in accounts]
     return Response(data=accounts)
 
 
