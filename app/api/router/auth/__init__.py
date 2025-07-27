@@ -133,7 +133,6 @@ def refresh_token(data: Session):
     name="Lấy lại mật khẩu",
     response_model=Response[str],
 )
-@limiter(max_request=3, duration=600)
 async def post_reset_password(
     request: Request,
     data: ResetPassword,
@@ -183,15 +182,18 @@ async def post_reset_password(
     response_model=Response[bool],
 )
 async def put_reset_password(data: NewPassword):
-    payload = ACCESS_JWT.decode(data.token)
-    if payload.get("action", "") != "reset-password":
-        raise HTTP_400_BAD_REQUEST("Token không hợp lệ")
-    user = await userService.find(payload.get("user_id"))
-    if user is None:
-        raise HTTP_404_NOT_FOUND("Người dùng không tồn tại")
-    user = user.change_password(data.password)
-    await user.save()
-    return Response(data=True)
+    try:
+        payload = ACCESS_JWT.decode(data.token)
+        if payload.get("action", "") != "reset-password":
+            raise HTTP_400_BAD_REQUEST("Token không hợp lệ")
+        user = await userService.find(payload.get("user_id"))
+        if user is None:
+            raise HTTP_404_NOT_FOUND("Người dùng không tồn tại")
+        user = user.change_password(data.password)
+        await user.save()
+        return Response(data=True)
+    except ExpiredSignatureError as e:
+        raise HTTP_400_BAD_REQUEST("Liên kết hết hạn") from e
 
 
 @apiRouter.post(
