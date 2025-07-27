@@ -119,6 +119,7 @@ class FullUserResponse(BaseResponse):
     username: Optional[str] = None
     name: Optional[str] = None
     email: Optional[str] = None
+    email_verified: bool
     phone: Optional[str] = None
     address: Optional[str] = None
     image_url: Optional[str] = None
