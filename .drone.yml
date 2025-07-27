@@ -38,7 +38,7 @@ steps:
         - cd ~/Document/QRApp
         - mkdir -p Backend
         - cd ~/Document/QRApp/Backend
-        - git clone https://github.com/QRBusiness/QRApp-BackEnd.git . || true
+        - git clone git@github.com:QRBusiness/QRApp-BackEnd.git . || true
         - git restore .
         - git checkout main
         - git pull origin main
