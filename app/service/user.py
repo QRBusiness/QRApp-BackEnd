@@ -39,15 +39,10 @@ class UserService(Service[User, UserCreate, UserUpdate]):
             permissions = await permissionService.find_many(
                 {
                     "$and": [
+                        {"code": {"$regex": r"^view.*(area|branch|order|category|subcategory)$"}},
+                        {"code": {"$regex": r"^view.*(serviceunit|product|request)$"}},
                         {
-                            "code": {
-                                "$regex": r"^view.*(area|branch|order|category|subcategory|serviceunit|product|request)$"
-                            }
-                        },
-                        {
-                            "code": {
-                                "$regex": r"^update.*(order|request)$",
-                            },
+                            "code": {"$regex": r"^update.*(order|request)$"},
                         },
                     ]
                 },
