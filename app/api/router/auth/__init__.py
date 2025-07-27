@@ -208,6 +208,7 @@ async def change_password(data: ChangePassword, request: Request):
         raise HTTP_403_FORBIDDEN("Mật khẩu hiện tại không chính xác.")
     user = user.change_password(data.new_password)
     await user.save()
+    await user.fetch_link("branch")
     return Response(data=user)
 
 
