@@ -74,14 +74,12 @@ async def delete_plan(id: PydanticObjectId):
         )
         if plan is None:
             raise HTTP_404_NOT_FOUND("Không tìm thấy")
-        await planService.delete(id)
+        await planService.delete(id, session=session)
         await extendOrderService.update_many(
             conditions={
                 "plan.$id": id,
             },
-            update_data={
-                "plan": None,
-            },
+            update_data={"$set": {"plan": None}},
             session=session,
         )
         return Response(data=True)
