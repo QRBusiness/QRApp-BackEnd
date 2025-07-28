@@ -247,7 +247,7 @@ async def view_checkout(
                     "accountNo": payment.accountNo,
                     "accountName": payment.accountName,
                     "acqId": payment.acqId,
-                    "amount": order.amount,
+                    "amount": sum([order.amount for order in orders]),
                     "addInfo": "Thanh toán đơn hàng",
                     "format": "text",
                     "template": template,
