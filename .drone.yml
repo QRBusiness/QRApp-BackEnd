@@ -21,12 +21,12 @@ steps:
       password:
         from_secret: DOCKERHUB_TOKEN # pragma: allowlist secret
       repo: nhathuyd4hp/qrapp-backend
-      cache_from:
-        - nhathuyd4hp/qrapp-backend:latest
-      build_args:
-        - BUILDKIT_INLINE_CACHE=1
       tags:
         - latest
+      build_args:
+        - BUILDKIT_INLINE_CACHE=1
+      cache_from:
+        - nhathuyd4hp/qrapp-backend:latest
   - name: Deploy to VPS
     image: ghcr.io/appleboy/drone-ssh
     settings:

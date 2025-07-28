@@ -1,6 +1,8 @@
 # ─────────────── BUILD STAGE ───────────────
 FROM python:3.12-slim AS builder
 
+ARG BUILDKIT_INLINE_CACHE=1
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
@@ -27,7 +29,6 @@ RUN uv lock
 # Create virtual environment and install dependencies
 RUN uv venv && \
     uv pip install --upgrade pip && \
-    uv pip install playwright && \
     uv sync --frozen --no-cache && \
     find .venv -name '*.pyc' -delete && \
     find .venv -name '__pycache__' -type d -exec rm -rf {} +
