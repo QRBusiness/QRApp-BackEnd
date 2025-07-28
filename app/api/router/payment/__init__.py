@@ -25,7 +25,11 @@ apiRouter = APIRouter(
 )
 
 
-@apiRouter.get(path="/banks", name="Danh sách ngân hàng", response_model=Response)
+@apiRouter.get(
+    path="/banks",
+    name="Danh sách ngân hàng",
+    response_model=Response,
+)
 @limiter(duration=120)
 async def get_banks(request: Request):
     async with httpx.AsyncClient() as client:
@@ -34,7 +38,11 @@ async def get_banks(request: Request):
         return Response(data=data)
 
 
-@apiRouter.get(path="/methods", name="Xem phương thức thanh toán", response_model=Response)
+@apiRouter.get(
+    path="/methods",
+    name="Xem phương thức thanh toán",
+    response_model=Response,
+)
 async def get_method():
     return Response(
         data=[{"name": method.name, "description": method.description()} for method in PaymentMethod],
@@ -63,6 +71,9 @@ async def get_my_bank(request: Request):
 )
 async def post_banks(data: PaymentCreate, request: Request):
     async with userService.transaction(Mongo.client) as session:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.vietqr.io/v2/banks")
+            banks = response.json().get("data")
         business = PydanticObjectId(request.state.user_scope) if request.state.user_role != "Admin" else None
         payment = await paymentService.find_one(
             conditions={
@@ -78,6 +89,8 @@ async def post_banks(data: PaymentCreate, request: Request):
         )
         data_dict = data.model_dump(by_alias=False)
         data_dict["business"] = user.business.to_ref() if user.business else None
+        if not any(bank.get("bin") == str(data_dict.get("acqId")) for bank in banks):
+            raise HTTP_400_BAD_REQUEST("Mã BIN ngân hàng không hợp lệ hoặc không được hỗ trợ.")
         payment = await paymentService.insert(
             data_dict,
             session=session,

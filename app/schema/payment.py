@@ -18,7 +18,12 @@ class PaymentCreate(BaseModel):
         max_length=50,
         description="Tên tài khoản ngân hàng",
     )
-    acqId: int = Field(alias="bin", ge=100000, le=999999, description="Mã định danh ngân hàng")
+    acqId: int = Field(
+        alias="bin",
+        ge=100000,
+        le=999999,
+        description="Mã định danh ngân hàng",
+    )
 
 
 class PaymentUpdate(BaseModel):

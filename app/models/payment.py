@@ -1,8 +1,9 @@
 from typing import Optional
 
-from beanie import Link
+from beanie import Insert, Link, Replace, SaveChanges, Update, before_event
 from pydantic import Field
 from pymongo import IndexModel
+from unidecode import unidecode
 
 from app.models import Business
 
@@ -29,3 +30,8 @@ class Payment(Base):
         indexes = [
             IndexModel([("business", 1)], unique=True),
         ]
+
+    @before_event([Insert, Update, Replace, SaveChanges])
+    def unidecode_accountName(self):
+        if self.accountName:
+            self.accountName = unidecode(self.accountName).upper()
