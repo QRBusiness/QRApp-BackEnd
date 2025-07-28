@@ -42,6 +42,7 @@ class SessionClient(RedisClient):
             user_id,
             token,
             nx=True,
+            ex=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         )
 
     def sign_out(self, user_id):
