@@ -9,7 +9,7 @@ from app.common.api_message import KeyResponse, get_message
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.db import Mongo
-from app.schema.group import FullGroupResponse, GroupCreate, GroupResponse
+from app.schema.group import FullGroupResponse, GroupCreate, GroupResponse, GroupUpdate
 from app.service import businessService, groupService, permissionService, userService
 
 apiRouter = APIRouter(
@@ -84,6 +84,31 @@ async def post_group(data: GroupCreate, request: Request):
     if any(group.name.lower() == data["name"].lower() for group in group_in_business):
         raise HTTP_409_CONFLICT(f"Đã có nhóm {data["name"]} tại doanh nghiệp này")
     group = await groupService.insert(data)
+    return Response(data=group)
+
+
+@apiRouter.put(
+    path="/{id}",
+    name="Chỉnh sửa thông tin nhóm",
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.group"],
+            ),
+        ),
+    ],
+    response_model=Response[GroupResponse],
+)
+async def put_group(id: PydanticObjectId, data: GroupUpdate, request: Request):
+    group = await groupService.find_one(
+        conditions={
+            "_id": id,
+            "business.$id": PydanticObjectId(request.state.user_scope),
+        }
+    )
+    if group is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy nhóm")
+    group = await groupService.update(id, data)
     return Response(data=group)
 
 
