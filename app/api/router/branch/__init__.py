@@ -80,7 +80,13 @@ async def update_branch(id: PydanticObjectId, data: BranchUpdate, request: Reque
     path="/{id}",
     name="Xóa chi nhánh",
     response_model=Response,
-    dependencies=[Depends(permission_required(permissions=["delete.branch"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["delete.branch"],
+            ),
+        ),
+    ],
 )
 async def delete_branch(id: PydanticObjectId, request: Request):
     async with businessService.transaction(Mongo.client) as session:
@@ -91,8 +97,20 @@ async def delete_branch(id: PydanticObjectId, request: Request):
         user_scope = PydanticObjectId(request.state.user_scope)
         if branch_scope != user_scope:
             raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
-        await branchService.delete(id, session=session)
-        await userService.delete_many(conditions={"branch.$id": id})
-        await areaService.delete_many(conditions={"branch.$id": id})
-        await unitService.delete_many(conditions={"branch.$id": id})
+        await branchService.delete(
+            id=id,
+            session=session,
+        )
+        await userService.delete_many(
+            conditions={"branch.$id": id},
+            session=session,
+        )
+        await areaService.delete_many(
+            conditions={"branch.$id": id},
+            session=session,
+        )
+        await unitService.delete_many(
+            conditions={"branch.$id": id},
+            session=session,
+        )
     return Response(data="Xóa thành công")

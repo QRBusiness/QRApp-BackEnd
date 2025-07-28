@@ -107,7 +107,10 @@ async def report(
             item["product"] = product
     for order in orders:
         if isinstance(order.service_unit, Link):
-            order.service_unit = ServiceUnitResponse(id=order.service_unit.to_dict().get("id"), name="Không xác định")
+            order.service_unit = ServiceUnitResponse(
+                id=order.service_unit.to_dict().get("id"),
+                name="Không xác định",
+            )
         if isinstance(order.area, Link):
             order.area = AreaResponse(
                 id=order.area.to_dict().get("id"),
@@ -124,7 +127,9 @@ async def report(
             )
         if isinstance(order.branch, Link):
             order.branch = BranchResponse(
-                id=order.branch.to_dict().get("id"), name="Không xác định", address="Không xác định"
+                id=order.branch.to_dict().get("id"),
+                name="Không xác định",
+                address="Không xác định",
             )
     return Response(
         data=Report(

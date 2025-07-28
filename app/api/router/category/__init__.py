@@ -179,7 +179,13 @@ async def put_category(id: PydanticObjectId, data: CategoryUpdate, request: Requ
     name="Xóa phân loại",
     status_code=200,
     response_model=Response[str],
-    dependencies=[Depends(permission_required(permissions=["delete.category"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["delete.category"],
+            ),
+        ),
+    ],
 )
 async def delete_category(id: PydanticObjectId, request: Request):
     async with categoryService.transaction(Mongo.client) as session:
@@ -192,9 +198,18 @@ async def delete_category(id: PydanticObjectId, request: Request):
         )
         if category is None:
             raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-        await categoryService.delete(id)
-        await subcategoryService.delete_many(conditions={"category.$id": id})
-        await productService.delete_many(conditions={"category.$id": id})
+        await categoryService.delete(
+            id=id,
+            session=session,
+        )
+        await subcategoryService.delete_many(
+            conditions={"category.$id": id},
+            session=session,
+        )
+        await productService.delete_many(
+            conditions={"category.$id": id},
+            session=session,
+        )
     return Response(data="Xóa thành công")
 
 
@@ -226,7 +241,13 @@ async def post_subcategory(id: PydanticObjectId, data: SubCategoryCreate, reques
     name="Xóa phân loại chi tiết",
     status_code=200,
     response_model=Response[str],
-    dependencies=[Depends(permission_required(permissions=["delete.subcategory"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["delete.subcategory"],
+            ),
+        ),
+    ],
 )
 async def delete_subcategory(id: PydanticObjectId, request: Request):
     async with subcategoryService.transaction(Mongo.client) as session:
@@ -237,6 +258,9 @@ async def delete_subcategory(id: PydanticObjectId, request: Request):
         category = sub_category.category
         if category.business.id != PydanticObjectId(request.state.user_scope):
             raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-        await subcategoryService.delete(id)
-        await productService.delete_many(conditions={"subcategory.$id": id})
+        await subcategoryService.delete(id=id, session=session)
+        await productService.delete_many(
+            conditions={"subcategory.$id": id},
+            session=session,
+        )
     return Response(data="Xóa thành công")

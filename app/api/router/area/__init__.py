@@ -15,7 +15,11 @@ apiRouter = APIRouter(
     prefix="/areas",
     dependencies=[
         Depends(login_required),
-        Depends(role_required(role=["BusinessOwner", "Staff"])),
+        Depends(
+            role_required(
+                role=["BusinessOwner", "Staff"],
+            ),
+        ),
     ],
 )
 
@@ -101,6 +105,12 @@ async def delete_area(id: PydanticObjectId, request: Request):
             raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
         if area.business.to_ref().id != PydanticObjectId(request.state.user_scope):
             raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
-        await areaService.delete(id)
-        await unitService.delete_many(conditions={"area.$id": id})
+        await areaService.delete(
+            id=id,
+            session=session,
+        )
+        await unitService.delete_many(
+            conditions={"area.$id": id},
+            session=session,
+        )
     return Response(data="Xóa thành công")

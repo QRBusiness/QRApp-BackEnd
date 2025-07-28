@@ -153,7 +153,11 @@ async def post_qrcode(
     name="Xóa đơn vị dịch vụ",
     response_model=Response,
     dependencies=[
-        Depends(permission_required(permissions=["delete.serviceunit"])),
+        Depends(
+            permission_required(
+                permissions=["delete.serviceunit"],
+            ),
+        ),
     ],
 )
 async def delete_service(id: PydanticObjectId, request: Request):

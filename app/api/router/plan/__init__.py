@@ -60,7 +60,11 @@ async def put_plan(id: PydanticObjectId, data: PlanUpdate):
     return Response(data=plan)
 
 
-@apiRouter.delete(path="/{id}", response_model=Response[bool], name="Xóa gói gia hạn")
+@apiRouter.delete(
+    path="/{id}",
+    response_model=Response[bool],
+    name="Xóa gói gia hạn",
+)
 async def delete_plan(id: PydanticObjectId):
     plan = await planService.find(id)
     if plan is None:

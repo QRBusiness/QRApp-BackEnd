@@ -138,7 +138,7 @@ async def delete_group(id: PydanticObjectId, request: Request):
         ):
             raise HTTP_404_NOT_FOUND("Không tìm thấy nhóm")
         await groupService.delete(
-            id,
+            id=id,
             session=session,
         )
         await userService.update_many(
