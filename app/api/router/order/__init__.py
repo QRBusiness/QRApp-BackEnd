@@ -85,7 +85,7 @@ async def report(
     if method:
         conditions["payment_method"] = method
     if staff:
-        conditions["staff"] = staff
+        conditions["staff._id"] = staff
     if product:
         conditions["items.product.$id"] = product
     if start_date and end_date:
