@@ -4,7 +4,7 @@ name: CI/CD Backend
 
 clone:
   ssh_key:
-    from_secret: GIT_SSH_KEY  #  pragma: allowlist secret
+    from_secret: GIT_SSH_KEY  # pragma: allowlist secret
 
 trigger:
   branch:
