@@ -61,14 +61,14 @@ apiRouter = APIRouter(
 )
 async def report(
     request: Request,
-    branch: Optional[PydanticObjectId] = Query(default=None),
-    area: Optional[PydanticObjectId] = Query(default=None),
-    service_unit: Optional[PydanticObjectId] = Query(default=None),
-    product: Optional[PydanticObjectId] = Query(default=None),
-    staff: Optional[PydanticObjectId] = Query(default=None),
-    method: Optional[PaymentMethod] = Query(default=None),
-    start_date: Optional[datetime] = Query(default=None),
-    end_date: Optional[datetime] = Query(default=None),
+    branch: Optional[PydanticObjectId] = Query(default=None, description="Chi nhánh"),
+    area: Optional[PydanticObjectId] = Query(default=None, description="Khu vực"),
+    service_unit: Optional[PydanticObjectId] = Query(default=None, description="Dịch vụ"),
+    product: Optional[PydanticObjectId] = Query(default=None, description="Sản phẩm"),
+    staff: Optional[PydanticObjectId] = Query(default=None, description="Nhân viên"),
+    method: Optional[PaymentMethod] = Query(default=None, description="Phương thức thanh toán"),
+    start_date: Optional[datetime] = Query(default=None, description="Từ ngày"),
+    end_date: Optional[datetime] = Query(default=None, description="Đến ngày"),
 ):
     if request.state.user_role != "BusinessOwner":
         raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
@@ -94,6 +94,9 @@ async def report(
         conditions["created_at"] = {"$gte": start_date}
     elif end_date:
         conditions["created_at"] = {"$lte": end_date}
+    from pprint import pprint
+
+    pprint(conditions)
     orders = await orderService.find_many(
         conditions,
         fetch_links=True,
