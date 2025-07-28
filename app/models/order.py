@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from beanie import Link
 from pydantic import Field
@@ -41,7 +41,7 @@ class Order(Base):
 
 class ExtendOrder(Base):
     business: "Link[Business]" = Field(description="Doanh nghiệp muốn gia hạn")  # type: ignore  # noqa: F821
-    plan: "Link[Plan]" = Field(description="Gói gia hạn")  # type: ignore  # noqa: F821
+    plan: Optional["Link[Plan]"] = Field(default=None, description="Gói gia hạn")  # type: ignore  # noqa: F821
     image: str = Field(..., description="Ảnh xác minh thanh toán")
     payment_method: PaymentMethod = Field(default=PaymentMethod.BANK)
     status: OrderStatus = Field(default=OrderStatus.UNPAID)

@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends
 from app.api.dependency import login_required, role_required
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.db import Mongo
 from app.schema.plan import PlanCreate, PlanResponse, PlanUpdate
-from app.service import paymentService, planService
+from app.service import extendOrderService, paymentService, planService
 
 apiRouter = APIRouter(
     tags=["Plan"],
@@ -66,9 +67,21 @@ async def put_plan(id: PydanticObjectId, data: PlanUpdate):
     name="Xóa gói gia hạn",
 )
 async def delete_plan(id: PydanticObjectId):
-    plan = await planService.find(id)
-    if plan is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy")
-    if await planService.delete(id):
+    async with planService.transaction(Mongo.client) as session:
+        plan = await planService.find(
+            id=id,
+            session=session,
+        )
+        if plan is None:
+            raise HTTP_404_NOT_FOUND("Không tìm thấy")
+        await planService.delete(id)
+        await extendOrderService.update_many(
+            conditions={
+                "plan.$id": id,
+            },
+            update_data={
+                "plan": None,
+            },
+            session=session,
+        )
         return Response(data=True)
-    return Response(data=False)
