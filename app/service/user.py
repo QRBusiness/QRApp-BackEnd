@@ -38,13 +38,11 @@ class UserService(Service[User, UserCreate, UserUpdate]):
         if data["role"] == "Staff":
             permissions = await permissionService.find_many(
                 conditions={
-                    "code": {
-                        "$in": [
-                            {"$regex": r"^view.*(area|branch|order|category|subcategory)$"},
-                            {"$regex": r"^view.*(serviceunit|product|request)$"},
-                            {"$regex": r"^update.*(order|request)$"},
-                        ]
-                    }
+                    "$or": [
+                        {"code": {"$regex": r"^view.*(area|branch|order|category|subcategory)$"}},
+                        {"code": {"$regex": r"^view.*(serviceunit|product|request)$"}},
+                        {"code": {"$regex": r"^update.*(order|request)$"}},
+                    ]
                 },
                 session=session,
             )
