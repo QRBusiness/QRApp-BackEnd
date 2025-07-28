@@ -441,13 +441,11 @@ async def reset_permission(task: BackgroundTasks):
         )
         StaffPermission = await permissionService.find_many(
             conditions={
-                "code": {
-                    "$in": [
-                        {"$regex": r"^view.*(area|branch|order|category|subcategory)$"},
-                        {"$regex": r"^view.*(serviceunit|product|request)$"},
-                        {"$regex": r"^update.*(order|request)$"},
-                    ]
-                }
+                "$or": [
+                    {"code": {"$regex": r"^view.*(area|branch|order|category|subcategory)$"}},
+                    {"code": {"$regex": r"^view.*(serviceunit|product|request)$"}},
+                    {"code": {"$regex": r"^update.*(order|request)$"}},
+                ]
             },
         )
         users = await userService.find_many()
