@@ -402,8 +402,5 @@ async def cancel_order(
     )
     if order is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng hoặc đơn hàng đã được xử lí")
-    order = await orderService.update(
-        id=id,
-        data=OrderUpdate(status=OrderStatus.CANCEL),
-    )
-    return Response(data="Đơn hàng đã bị hủy")
+    if await orderService.delete(id):
+        return Response(data="Đơn hàng đã bị hủy")
