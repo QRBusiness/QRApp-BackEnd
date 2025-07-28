@@ -21,6 +21,7 @@ class PaymentMethod(str, Enum):
 class OrderStatus(str, Enum):
     UNPAID = "Unpaid"
     PAID = "Paid"
+    CANCEL = "Cancel"
 
 
 class Order(Base):

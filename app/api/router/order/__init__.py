@@ -374,3 +374,36 @@ async def gen_qr_for_orders(
         expires_delta=timedelta(minutes=60),
     )
     return Response(data=token)
+
+
+@apiRouter.delete(
+    path="/{id}",
+    name="Hủy đơn",
+    response_model=Response[str],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.order"],
+            ),
+        ),
+    ],
+)
+async def cancel_order(
+    id: PydanticObjectId,
+    request: Request,
+):
+    order = await orderService.find_one(
+        conditions={
+            "_id": id,
+            "business.$id": PydanticObjectId(request.state.user_scope),
+            "status": OrderStatus.UNPAID,
+            **({"branch.$id": PydanticObjectId(request.state.user_branch)} if request.state.user_branch else {}),
+        }
+    )
+    if order is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng hoặc đơn hàng đã được xử lí")
+    order = await orderService.update(
+        id=id,
+        data=OrderUpdate(status=OrderStatus.CANCEL),
+    )
+    return Response(data="Đơn hàng đã bị hủy")
