@@ -405,3 +405,60 @@ async def my_business(request: Request):
     business = await businessService.find(request.state.user_scope)
     await business.fetch_all_links()
     return Response(data=business)
+
+
+@apiRouter.post(
+    path="/reset-permission",
+    name="Cài lại quyền mặc định",
+    description="Cập nhật quyền mặc định lại cho các người dùng",
+    status_code=200,
+    response_model=Response[bool],
+    dependencies=[
+        Depends(login_required),
+        Depends(
+            role_required(
+                role=[
+                    "Admin",
+                ]
+            ),
+        ),
+    ],
+    include_in_schema=True,
+)
+async def reset_permission(task: BackgroundTasks):
+    async def update_permission():
+        AdminPermissions = await permissionService.find_many(
+            conditions={
+                "code": {"$regex": r"\.(businesstype|business|plan|group|user|extendorder|permission)$"},
+            },
+        )
+        BusinessPermissions = await permissionService.find_many(
+            conditions={
+                "code": {
+                    "$not": {"$regex": r"\.(businesstype|business|plan|permission)$"},
+                },
+            },
+        )
+        StaffPermission = await permissionService.find_many(
+            conditions={
+                "code": {
+                    "$in": [
+                        {"$regex": r"^view.*(area|branch|order|category|subcategory)$"},
+                        {"$regex": r"^view.*(serviceunit|product|request)$"},
+                        {"$regex": r"^update.*(order|request)$"},
+                    ]
+                }
+            },
+        )
+        users = await userService.find_many()
+        for user in users:
+            if user.role == "Admin":
+                user.permissions = AdminPermissions
+            if user.role == "BusinessOwner":
+                user.permissions = BusinessPermissions
+            if user.role == "Staff":
+                user.permissions = StaffPermission
+            await user.save()
+
+    task.add_task(update_permission)
+    return Response(data=True)
