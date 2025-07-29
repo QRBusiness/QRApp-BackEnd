@@ -96,8 +96,8 @@ async def put_business(id: PydanticObjectId, data: BusinessUpdate):
 )
 async def post_business(data: BusinessRegister):
     async with businessService.transaction(Mongo.client) as session:
-        type = await businessTypeService.find(data.business_type, session)
-        if type is None:
+        b_type = await businessTypeService.find(data.business_type, session)
+        if b_type is None:
             raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp không phù hợp")
         if await businessService.find_one({"name": data.business_name}, session=session):
             raise HTTP_409_CONFLICT("Tên doanh nghiệp đã được đăng kí")
@@ -112,7 +112,7 @@ async def post_business(data: BusinessRegister):
             name=data.business_name,
             address=data.business_address,
             contact=data.business_contact,
-            business_type=type,
+            business_type=b_type,
             tax_code=data.business_tax_code,
             owner=None,
         )

@@ -28,7 +28,14 @@ async def post_plan(data: PlanCreate):
     payment = await paymentService.find_one(conditions={"business.$id": None})
     if payment is None:
         raise HTTP_400_BAD_REQUEST("Không tìm thấy thông tin thanh toán")
-    if await planService.find_one({"$or": [{"name": data.name}, {"period": data.period}]}):
+    if await planService.find_one(
+        {
+            "$or": [
+                {"name": data.name},
+                {"period": data.period},
+            ],
+        },
+    ):
         raise HTTP_409_CONFLICT("Gói đã tồn tại")
     plan = await planService.insert(data)
     return Response(data=plan)

@@ -40,11 +40,19 @@ apiRouter = APIRouter(
     name="Phân loại sản phẩm",
     status_code=201,
     response_model=Response[CategoryResponse],
-    dependencies=[Depends(permission_required(permissions=["create.category"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["create.category"],
+            ),
+        ),
+    ],
 )
 async def post_category(data: CategoryCreate, request: Request):
     business = await businessService.find(request.state.user_scope)
-    if await categoryService.find_one(conditions={"name": data.name, "business.$id": business.id}):
+    if await categoryService.find_one(
+        conditions={"name": data.name, "business.$id": business.id},
+    ):
         raise HTTP_409_CONFLICT(f"Phân loại {data.name} đã tồn tại")
     data = data.model_dump()
     data["business"] = business
@@ -57,11 +65,19 @@ async def post_category(data: CategoryCreate, request: Request):
     name="Xem tất cả phân loại",
     status_code=200,
     response_model=Response[List[CategoryResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.category"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.category"],
+            ),
+        ),
+    ],
 )
 async def get_subcategory(request: Request):
     categories = await categoryService.find_many(
-        conditions={"business.$id": PydanticObjectId(request.state.user_scope)}
+        conditions={
+            "business.$id": PydanticObjectId(request.state.user_scope),
+        }
     )
     return Response(data=categories)
 
@@ -71,7 +87,13 @@ async def get_subcategory(request: Request):
     name="Xem tất cả chi tiết phân loại",
     status_code=200,
     response_model=Response[List[SubCategoryResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.subcategory"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.subcategory"],
+            ),
+        ),
+    ],
 )
 async def get_category(request: Request, category: Optional[PydanticObjectId] = Query(default=None)):
     if category:

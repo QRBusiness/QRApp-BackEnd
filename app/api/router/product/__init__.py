@@ -223,7 +223,9 @@ async def post_product(data: ProductCreate, request: Request):
     subcategory = await subcategoryService.find(data.sub_category)
     if subcategory is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy phân loại")
-    if product := await productService.find_one(conditions={"subcategory.$id": subcategory.id, "name": data.name}):
+    if await productService.find_one(
+        conditions={"subcategory.$id": subcategory.id, "name": data.name},
+    ):
         raise HTTP_409_CONFLICT(f"Món {data.name} đã có trong Menu")
     await subcategory.fetch_link("category")
     category = subcategory.category

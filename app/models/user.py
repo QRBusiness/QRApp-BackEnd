@@ -37,8 +37,6 @@ class User(Base):
 
     @before_event(Insert)
     def hash_password(self):
-        if self.role not in ["Admin", "BusinessOwner", "Staff"]:
-            raise Exception("Role")
         if not self.password.startswith("$2b$"):
             self.password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 

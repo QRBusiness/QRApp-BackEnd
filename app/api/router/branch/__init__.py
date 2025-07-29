@@ -42,7 +42,7 @@ async def get_branchs(request: Request):
 )
 async def post_branch(data: BranchCreateWithoutBusiness, request: Request):
     business = await businessService.find(request.state.user_scope)
-    if branch := await branchService.find_one(
+    if await branchService.find_one(
         conditions={
             "business.$id": business.id,
             "name": data.name,
@@ -90,27 +90,32 @@ async def update_branch(id: PydanticObjectId, data: BranchUpdate, request: Reque
 )
 async def delete_branch(id: PydanticObjectId, request: Request):
     async with businessService.transaction(Mongo.client) as session:
-        branch = await branchService.find(id, session=session)
-        if branch is None:
+        if (
+            await branchService.find_one(
+                conditions={
+                    "_id": id,
+                    "business.$id": PydanticObjectId(request.state.user_scope),
+                },
+                session=session,
+            )
+            is None
+        ):
             raise HTTP_404_NOT_FOUND("Không tìm thấy chi nhánh")
-        branch_scope = branch.business.to_ref().id
-        user_scope = PydanticObjectId(request.state.user_scope)
-        if branch_scope != user_scope:
-            raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
         await branchService.delete(
             id=id,
             session=session,
         )
+        conditions = {"branch.$id": id}
         await userService.delete_many(
-            conditions={"branch.$id": id},
+            conditions=conditions,
             session=session,
         )
         await areaService.delete_many(
-            conditions={"branch.$id": id},
+            conditions=conditions,
             session=session,
         )
         await unitService.delete_many(
-            conditions={"branch.$id": id},
+            conditions=conditions,
             session=session,
         )
     return Response(data="Xóa thành công")

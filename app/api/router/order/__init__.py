@@ -105,7 +105,6 @@ async def report(
         for item in order.items:
             product = await productService.find(item.get("product").id)
             item["product"] = product
-    for order in orders:
         if isinstance(order.service_unit, Link):
             order.service_unit = ServiceUnitResponse(
                 id=order.service_unit.to_dict().get("id"),

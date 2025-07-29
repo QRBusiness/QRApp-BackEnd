@@ -71,10 +71,20 @@ async def update_business_type(id: PydanticObjectId, data: BusinessTypeUpdate):
     if await businessTypeService.find(id) is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
     if data.name:
-        if type := await businessTypeService.find_one({"name": {"$regex": f"^{data.name}$", "$options": "i"}}):
-            if type.id != id:
+        if b_type := await businessTypeService.find_one(
+            {
+                "name": {
+                    "$regex": f"^{data.name}$",
+                    "$options": "i",
+                },
+            },
+        ):
+            if b_type.id != id:
                 raise HTTP_409_CONFLICT(f"Loại hình {data.name} đã tồn tại")
-    data = await businessTypeService.update(id=id, data=data.model_dump(exclude_none=True))
+    data = await businessTypeService.update(
+        id=id,
+        data=data.model_dump(exclude_none=True),
+    )
     return Response(data=data)
 
 
@@ -92,10 +102,10 @@ async def update_business_type(id: PydanticObjectId, data: BusinessTypeUpdate):
     response_model=Response[str],
 )
 async def delete_business_type(id: PydanticObjectId):
-    type = await businessTypeService.find(id)
-    if type is None:
+    b_type = await businessTypeService.find(id)
+    if b_type is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy")
-    if await businessService.find_one({"business_type.$id": type.id}):
+    if await businessService.find_one({"business_type.$id": b_type.id}):
         raise HTTP_400_BAD_REQUEST("Loại doanh nghiệp đang được sử dụng.")
     if not await businessTypeService.delete(id):
         return Response(data="Xóa thất bại")
