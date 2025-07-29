@@ -125,11 +125,9 @@ async def get_category(
         categories = await categoryService.find_many(
             conditions={"business.$id": PydanticObjectId(request.state.user_scope)}
         )
-    conditions = (
-        {
-            "category._id": {"$in": [cat.id for cat in categories]},
-        },
-    )
+    conditions: dict = {
+        "category._id": {"$in": [cat.id for cat in categories]},
+    }
     subcategories = await subcategoryService.find_many(
         conditions,
         skip=(page - 1) * limit,
