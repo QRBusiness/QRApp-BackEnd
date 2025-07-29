@@ -11,7 +11,6 @@ class PermissionCreate(BaseModel):
 
 
 class PermissionUpdate(BaseModel):
-    code: Optional[str] = None
     description: Optional[str] = None
 
 

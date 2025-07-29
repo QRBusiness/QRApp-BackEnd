@@ -13,6 +13,7 @@ from app.api.router.category import apiRouter as categoryRouter
 from app.api.router.group import apiRouter as groupRouter
 from app.api.router.order import apiRouter as orderRouter
 from app.api.router.payment import apiRouter as paymentRouter
+from app.api.router.permission import apiRouter as permissionRouter
 from app.api.router.plan import apiRouter as planRouter
 from app.api.router.product import private_apiRouter as private_productRouter
 from app.api.router.product import public_apiRouter as public_productRouter
@@ -25,6 +26,7 @@ from app.socket import manager
 
 api = APIRouter()
 api.include_router(authRouter)
+api.include_router(permissionRouter)
 api.include_router(businesstypeRouter)
 api.include_router(planRouter)
 api.include_router(businessRouter)
