@@ -17,7 +17,7 @@ class GlobalJSONResponse(JSONResponse):
 
 class Pagination(BaseModel):
     current_page: int = 1
-    per_page: int = (settings.PAGE_SIZE,)
+    per_page: int = settings.PAGE_SIZE
     total_items: int
     total_pages: Optional[int] = None
 
