@@ -244,28 +244,81 @@ async def request(
     return Response(data=req)
 
 
-@apiRouter.post(path="/process/{id}", response_model=Response, dependencies=[Depends(login_required)])
+@apiRouter.post(
+    path="/process/{id}",
+    response_model=Response[str],
+    dependencies=[
+        Depends(login_required),
+    ],
+)
 async def process_request(id: PydanticObjectId, req: Request):
     async with areaService.transaction(Mongo.client) as session:
-        request = await requestService.find(id, session=session)
-        if request is None:
-            raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
-        if req.state.user_scope != request.business.to_dict().get("id"):
-            raise HTTP_404_NOT_FOUND("Không tìm thấy yêu cầu")
+        request = await requestService.find_one(
+            conditions={
+                "_id": id,
+                "business.$id": PydanticObjectId(req.state.user_scope),
+            },
+            session=session,
+        )
+        # Là nhân viên và khác chi nhánh
         if req.state.user_branch is not None and request.branch.to_dict().get("id") != req.state.user_branch:
             raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
         user = await userService.find(req.state.user_id, session=session)
+        # Yêu cầu đã hoàn thành hoặc không phải người phụ trách
         if request.status == RequestStatus.COMPLETED or (
             request.status != RequestStatus.WAITING and request.staff.to_dict().get("id") != str(user.id)
         ):
-            await manager.broadcast(message="Yêu cầu đã được xử lí", user_ids=[PydanticObjectId(req.state.user_id)])
-            return Response(data=False)
+            await manager.broadcast(
+                message="Yêu cầu đã được xử lí",
+                user_ids=[PydanticObjectId(req.state.user_id)],
+            )
+            return Response(data="Yêu cầu đã được xử lí")
         await requestService.update(
-            id,
-            RequestUpdate(
+            id=id,
+            data=RequestUpdate(
                 status=request.status.next(),
                 staff=user.to_ref(),
             ),
             session=session,
         )
-    return Response(data=True)
+    return Response(data="Yêu cầu đang được xử lí")
+
+
+@apiRouter.delete(
+    path="/process/{id}",
+    response_model=Response[str],
+    dependencies=[
+        Depends(login_required),
+    ],
+)
+async def cancel_request(id: PydanticObjectId, req: Request):
+    async with areaService.transaction(Mongo.client) as session:
+        request = await requestService.find_one(
+            conditions={
+                "_id": id,
+                "business.$id": PydanticObjectId(req.state.user_scope),
+            },
+            session=session,
+        )
+        # Là nhân viên và khác chi nhánh
+        if req.state.user_branch is not None and request.branch.to_dict().get("id") != req.state.user_branch:
+            raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
+        user = await userService.find(req.state.user_id, session=session)
+        # Yêu cầu đã hoàn thành hoặc không phải người phụ trách
+        if request.status == RequestStatus.COMPLETED or (
+            request.status != RequestStatus.WAITING and request.staff.to_dict().get("id") != str(user.id)
+        ):
+            await manager.broadcast(
+                message="Yêu cầu đã được xử lí",
+                user_ids=[PydanticObjectId(req.state.user_id)],
+            )
+            return Response(data="Yêu cầu đã được xử lí")
+        await requestService.update(
+            id=id,
+            data=RequestUpdate(
+                status=RequestStatus.CANCELLED,
+                staff=user.to_ref(),
+            ),
+            session=session,
+        )
+    return Response(data="Đã hủy yêu cầu")
