@@ -76,11 +76,15 @@ async def get_extends(
 )
 async def put_extend(id: PydanticObjectId):
     async with extendOrderService.transaction(Mongo.client) as session:
-        order = await extendOrderService.find(id, session=session)
+        order = await extendOrderService.find_one(
+            conditions={
+                "_id": id,
+                "status": OrderStatus.UNPAID,
+            },
+            session=session,
+        )
         if order is None:
-            raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
-        if order.status == OrderStatus.PAID:
-            raise HTTP_400_BAD_REQUEST("Đơn hàng đã được xử lí")
+            raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng hoặc đã được xử lí")
         await order.fetch_all_links()
         await extendOrderService.update(
             id,

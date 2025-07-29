@@ -81,6 +81,14 @@ async def delete_plan(id: PydanticObjectId):
         )
         if plan is None:
             raise HTTP_404_NOT_FOUND("Không tìm thấy")
+        if await extendOrderService.find_one(
+            conditions={
+                "plan.$id": id,
+                "status": "Unpaid",
+            },
+            session=session,
+        ):
+            raise HTTP_400_BAD_REQUEST("Không thể xoá gói vì vẫn còn đơn hàng chưa thanh toán.")
         await planService.delete(id, session=session)
         await extendOrderService.update_many(
             conditions={
