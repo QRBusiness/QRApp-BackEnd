@@ -151,7 +151,13 @@ class Service(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def count(
         self, conditions: dict[str, Any] | None = None, session: AsyncIOMotorClientSession | None = None
     ) -> int:
-        conditions = conditions or {}
+        def normalize_conditions(conditions: dict[str, Any]) -> dict[str, Any]:
+            return {
+                (key.replace("._id", ".$id") if key.endswith("._id") else key): value
+                for key, value in conditions.items()
+            }
+
+        conditions = normalize_conditions(conditions or {})
         return await self.model.find(
             conditions,
             session=session,

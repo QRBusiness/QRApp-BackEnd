@@ -4,7 +4,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.schema.business import BusinessTypeCreate, BusinessTypeResponse, BusinessTypeUpdate
@@ -24,7 +24,13 @@ apiRouter = APIRouter(
     path="",
     name="Xem danh sách loại doanh nghiệp",
     response_model=Response[List[BusinessTypeResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.businesstype"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.businesstype"],
+            ),
+        ),
+    ],
 )
 async def get_business_type(
     page: int = Query(default=1, ge=1),
@@ -35,7 +41,16 @@ async def get_business_type(
         skip=(page - 1) * limit,
         limit=limit,
     )
-    return Response(data=data)
+    return Response(
+        data=data,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await businessTypeService.count(
+                {},
+            ),
+        ),
+    )
 
 
 @apiRouter.post(

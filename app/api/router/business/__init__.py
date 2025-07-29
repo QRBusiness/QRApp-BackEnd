@@ -5,7 +5,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.db import Mongo
@@ -41,18 +41,40 @@ async def get_businesses(
     if available is not None:
         conditions["available"] = available
     if type:
-        types = await businessTypeService.find_many({"name": {"$regex": type, "$options": "i"}})
+        types = await businessTypeService.find_many(
+            {
+                "name": {"$regex": type, "$options": "i"},
+            },
+        )
         type_ids = [type.id for type in types]
         conditions["business_type._id"] = {"$in": type_ids}
-    businesses = await businessService.find_many(conditions, skip=(page - 1) * limit, limit=limit, fetch_links=True)
-    return Response(data=businesses)
+    businesses = await businessService.find_many(
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
+        fetch_links=True,
+    )
+    return Response(
+        data=businesses,
+        pagination=Pagination(
+            current_page=1,
+            per_page=limit,
+            total_items=await businessService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.get(
     path="/{id}",
     name="Xem doanh nghiệp",
     status_code=200,
-    dependencies=[Depends(permission_required(permissions=["view.business"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.business"],
+            ),
+        ),
+    ],
     response_model=Response[FullBusinessResponse],
 )
 async def get_business(id: PydanticObjectId):

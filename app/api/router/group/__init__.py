@@ -1,13 +1,14 @@
 from typing import List
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.encoders import jsonable_encoder
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.core.config import settings
 from app.db import Mongo
 from app.schema.group import FullGroupResponse, GroupCreate, GroupResponse, GroupUpdate
 from app.service import businessService, groupService, permissionService, userService
@@ -34,11 +35,26 @@ apiRouter = APIRouter(
         ),
     ],
 )
-async def get_groups(request: Request):
+async def get_groups(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
+):
+    conditions = {"business._id": PydanticObjectId(request.state.user_scope)}
     groups = await groupService.find_many(
-        {"business._id": PydanticObjectId(request.state.user_scope)}, fetch_links=True
+        conditions,
+        fetch_links=True,
+        skip=(page - 1) * limit,
+        limit=limit,
     )
-    return Response(data=groups)
+    return Response(
+        data=groups,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await groupService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.get(

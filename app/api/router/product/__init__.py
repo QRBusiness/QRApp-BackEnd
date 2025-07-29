@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.db import Mongo, QRCode
@@ -25,15 +25,29 @@ public_apiRouter = APIRouter(tags=["Resource Public"])
     name="Danh sách tài khoản",
     response_model_exclude={"data": {"__all__": {"branch"}}},
 )
-async def find_account_by_email(email: str):
+async def find_account_by_email(
+    email: str,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
+):
+    conditions: dict = {
+        "email": email,
+        "email_verified": True,
+    }
     accounts = await userService.find_many(
-        conditions={
-            "email": email,
-            "email_verified": True,
-        },
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
     )
     accounts = [account.model_dump(exclude={"branch"}) for account in accounts]
-    return Response(data=accounts)
+    return Response(
+        data=accounts,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await userService.count(conditions),
+        ),
+    )
 
 
 @public_apiRouter.get(
@@ -84,8 +98,20 @@ async def get_products(
         conditions["category._id"] = category
     if sub_category:
         conditions["subcategory._id"] = sub_category
-    products = await productService.find_many(conditions, skip=(page - 1) * limit, limit=limit, fetch_links=True)
-    return Response(data=products)
+    products = await productService.find_many(
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
+        fetch_links=True,
+    )
+    return Response(
+        data=products,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await productService.count(conditions),
+        ),
+    )
 
 
 @public_apiRouter.get(
@@ -105,7 +131,14 @@ async def get_categories(
         limit=limit,
         projection_model=CategoryResponse,
     )
-    return Response(data=categories)
+    return Response(
+        data=categories,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await categoryService.count(conditions),
+        ),
+    )
 
 
 @public_apiRouter.get(
@@ -118,12 +151,26 @@ async def get_subcategories(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
 ):
-    categories = await categoryService.find_many({"business.$id": business})
-    conditions = {"category._id": {"$in": [category.id for category in categories]}}
-    sub_categories = await subcategoryService.find_many(
-        conditions=conditions, skip=(page - 1) * limit, limit=limit, fetch_links=True
+    categories = await categoryService.find_many(
+        {"business.$id": business},
     )
-    return Response(data=sub_categories)
+    conditions = {
+        "category._id": {"$in": [category.id for category in categories]},
+    }
+    sub_categories = await subcategoryService.find_many(
+        conditions=conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
+        fetch_links=True,
+    )
+    return Response(
+        data=sub_categories,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await subcategoryService.count(conditions),
+        ),
+    )
 
 
 private_apiRouter = APIRouter(
@@ -145,20 +192,40 @@ private_apiRouter = APIRouter(
     name="Xem danh sách sản phẩm",
     status_code=200,
     response_model=Response[List[FullProductResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.product"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.product"],
+            ),
+        ),
+    ],
 )
 async def get_product(
     request: Request,
     category: Optional[PydanticObjectId] = Query(default=None),
     sub_category: Optional[PydanticObjectId] = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
     conditions = {"business._id": PydanticObjectId(request.state.user_scope)}
     if category:
         conditions["category._id"] = category
     if sub_category:
         conditions["subcategory._id"] = sub_category
-    products = await productService.find_many(conditions, fetch_links=True)
-    return Response(data=products)
+    products = await productService.find_many(
+        conditions,
+        fetch_links=True,
+        skip=(page - 1) * limit,
+        limit=limit,
+    )
+    return Response(
+        data=products,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await productService.count(conditions),
+        ),
+    )
 
 
 @private_apiRouter.post(

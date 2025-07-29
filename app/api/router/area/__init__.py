@@ -4,8 +4,9 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.core.config import settings
 from app.db import Mongo
 from app.schema.area import AreaCreate, AreaResponse, AreaUpdate
 from app.service import areaService, branchService, businessService, unitService
@@ -31,7 +32,12 @@ apiRouter = APIRouter(
     response_model=Response[List[AreaResponse]],
     dependencies=[Depends(permission_required(permissions=["view.area"]))],
 )
-async def view_areas(request: Request, branch: Optional[PydanticObjectId] = Query(default=None)):
+async def view_areas(
+    request: Request,
+    branch: Optional[PydanticObjectId] = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
+):
     conditions = {
         "business._id": PydanticObjectId(request.state.user_scope),
     }
@@ -40,8 +46,17 @@ async def view_areas(request: Request, branch: Optional[PydanticObjectId] = Quer
     areas = await areaService.find_many(
         conditions,
         fetch_links=True,
+        skip=(page - 1) * limit,
+        limit=limit,
     )
-    return Response(data=areas)
+    return Response(
+        data=areas,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await areaService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.post(

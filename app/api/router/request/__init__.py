@@ -6,7 +6,7 @@ from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
 from app.core.decorator import limiter
@@ -148,8 +148,9 @@ async def get_requests(
     status: Optional[RequestStatus] = Query(default=None, description="Lọc theo trạng thái"),
     type: Optional[RequestType] = Query(default=None, description="Lọc theo type"),
     page: int = Query(default=1, ge=1),
-    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
+    req = request
     conditions = {"business._id": PydanticObjectId(request.state.user_scope)}
     if request.state.user_branch:
         conditions["branch._id"] = PydanticObjectId(request.state.user_branch)
@@ -177,7 +178,21 @@ async def get_requests(
                     else request.branch
                 ),
             )
-    return Response(data=requests)
+    total_items = await requestService.count(
+        conditions={
+            k: v
+            for k, v in {"status": status, "type": type, "business.$id": PydanticObjectId(req.state.user_scope)}.items()
+            if v is not None
+        }
+    )
+    return Response(
+        data=requests,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=total_items,
+        ),
+    )
 
 
 @apiRouter.post(

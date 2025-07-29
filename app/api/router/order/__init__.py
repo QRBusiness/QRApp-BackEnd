@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from jwt.exceptions import ExpiredSignatureError
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import (
     HTTP_400_BAD_REQUEST,
     HTTP_403_FORBIDDEN,
@@ -159,7 +159,7 @@ async def get_orders(
     status: Optional[OrderStatus] = Query(default=None),
     method: Optional[PaymentMethod] = Query(default=None),
     page: int = Query(default=1, ge=1),
-    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
     conditions = {
         "business._id": PydanticObjectId(request.state.user_scope),
@@ -208,7 +208,14 @@ async def get_orders(
             order.branch = BranchResponse(
                 id=order.branch.to_dict().get("id"), name="Không xác định", address="Không xác định"
             )
-    return Response(data=orders)
+    return Response(
+        data=orders,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await orderService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.get(

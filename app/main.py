@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api
 from app.common.api_message import KeyResponse
+from app.common.api_response import GlobalJSONResponse
 from app.common.http_exception import HTTP_ERROR
 from app.core.config import settings
 from app.core.middleware import LoggingMiddleware, TraceMiddleware
@@ -71,6 +72,7 @@ app = FastAPI(
     debug=False,
     lifespan=lifespan,
     version=settings.APP_VERSION,
+    default_response_class=GlobalJSONResponse,
 )
 # Middleware
 app.add_middleware(TraceMiddleware)

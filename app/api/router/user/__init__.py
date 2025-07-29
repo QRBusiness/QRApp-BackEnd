@@ -6,7 +6,7 @@ from fastapi_mail import MessageSchema, MessageType
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_message import KeyResponse, get_message
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.db import SessionManager
@@ -37,24 +37,47 @@ apiRouter = APIRouter(
 )
 async def get_users(
     request: Request,
-    role: Optional[Literal["Admin", "BusinessOwner", "Staff"]] = Query(default=None, description="Lọc theo vai trò"),
+    role: Optional[Literal["Admin", "BusinessOwner", "Staff"]] = Query(
+        default=None,
+        description="Lọc theo vai trò (Required Admin)",
+    ),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
     user_scope = request.state.user_scope
+    conditions: dict = {}
     if user_scope is None:
-        conditions = {}
         if role:
             conditions["role"] = role
-        users = await userService.find_many(conditions, projection_model=UserResponse, fetch_links=True)
-    else:
         users = await userService.find_many(
+            conditions,
+            projection_model=UserResponse,
+            fetch_links=True,
+            skip=(page - 1) * limit,
+            limit=limit,
+        )
+    else:
+        conditions = (
             {
                 "business._id": PydanticObjectId(user_scope),
                 "role": "Staff",
             },
+        )
+        users = await userService.find_many(
+            conditions,
             projection_model=UserResponse,
             fetch_links=True,
+            skip=(page - 1) * limit,
+            limit=limit,
         )
-    return Response(data=users)
+    return Response(
+        data=users,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await userService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.get(

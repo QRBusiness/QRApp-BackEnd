@@ -1,11 +1,12 @@
 from typing import List
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.core.config import settings
 from app.db import Mongo
 from app.schema.branch import BranchCreateWithoutBusiness, BranchResponse, BranchUpdate
 from app.service import areaService, branchService, businessService, unitService, userService
@@ -25,12 +26,35 @@ apiRouter = APIRouter(
     status_code=200,
     name="Danh sách chi nhánh (Thuộc quyền sở hữu)",
     response_model=Response[List[BranchResponse]],
-    dependencies=[Depends(permission_required(permissions=["view.branch"]))],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.branch"],
+            ),
+        ),
+    ],
 )
-async def get_branchs(request: Request):
-    business_id = request.state.user_scope
-    branches = await branchService.find_many(conditions={"business.$id": PydanticObjectId(business_id)})
-    return Response(data=branches)
+async def get_branchs(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
+):
+    conditions: dict = {
+        "business.$id": PydanticObjectId(request.state.user_scope),
+    }
+    branches = await branchService.find_many(
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
+    )
+    return Response(
+        data=branches,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await branchService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.post(

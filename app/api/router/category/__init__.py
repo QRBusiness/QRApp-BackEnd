@@ -4,8 +4,9 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependency import login_required, permission_required, role_required
-from app.common.api_response import Response
+from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from app.core.config import settings
 from app.db import Mongo
 from app.schema.category import (
     CategoryCreate,
@@ -73,13 +74,27 @@ async def post_category(data: CategoryCreate, request: Request):
         ),
     ],
 )
-async def get_subcategory(request: Request):
+async def get_subcategory(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
+):
+    conditions = {
+        "business.$id": PydanticObjectId(request.state.user_scope),
+    }
     categories = await categoryService.find_many(
-        conditions={
-            "business.$id": PydanticObjectId(request.state.user_scope),
-        }
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
     )
-    return Response(data=categories)
+    return Response(
+        data=categories,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await categoryService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.get(
@@ -95,7 +110,12 @@ async def get_subcategory(request: Request):
         ),
     ],
 )
-async def get_category(request: Request, category: Optional[PydanticObjectId] = Query(default=None)):
+async def get_category(
+    request: Request,
+    category: Optional[PydanticObjectId] = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=50),
+):
     if category:
         category = await categoryService.find(category)
         if category is None:
@@ -105,13 +125,25 @@ async def get_category(request: Request, category: Optional[PydanticObjectId] = 
         categories = await categoryService.find_many(
             conditions={"business.$id": PydanticObjectId(request.state.user_scope)}
         )
-    subcategories = await subcategoryService.find_many(
-        conditions={
+    conditions = (
+        {
             "category._id": {"$in": [cat.id for cat in categories]},
         },
+    )
+    subcategories = await subcategoryService.find_many(
+        conditions,
+        skip=(page - 1) * limit,
+        limit=limit,
         fetch_links=True,
     )
-    return Response(data=subcategories)
+    return Response(
+        data=subcategories,
+        pagination=Pagination(
+            current_page=page,
+            per_page=limit,
+            total_items=await subcategoryService.count(conditions),
+        ),
+    )
 
 
 @apiRouter.put(
