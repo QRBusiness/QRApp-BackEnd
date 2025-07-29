@@ -18,7 +18,11 @@ apiRouter = APIRouter(
     prefix="/users",
     dependencies=[
         Depends(login_required),
-        Depends(role_required(role=["Admin", "BusinessOwner"])),
+        Depends(
+            role_required(
+                role=["Admin", "BusinessOwner"],
+            ),
+        ),
     ],
 )
 
@@ -57,12 +61,10 @@ async def get_users(
             limit=limit,
         )
     else:
-        conditions = (
-            {
-                "business._id": PydanticObjectId(user_scope),
-                "role": "Staff",
-            },
-        )
+        conditions: dict = {
+            "business._id": PydanticObjectId(user_scope),
+            "role": "Staff",
+        }
         users = await userService.find_many(
             conditions,
             projection_model=UserResponse,
