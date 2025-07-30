@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from beanie import Document, Insert, PydanticObjectId, Replace, SaveChanges, Update, WriteRules, before_event
 from pydantic import Field
@@ -10,7 +10,7 @@ class Base(Document):
     id: Optional[PydanticObjectId] = Field(default=None, alias="_id")
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
-
+    audit: Optional[Dict[str, Any]] = None
     # Action Permissions
     __action__: List[str] = ["create", "view", "delete", "update"]
 
@@ -25,6 +25,9 @@ class Base(Document):
         ignore_revision: bool = False,
         **kwargs: Any,
     ) -> None:
+        if not self.is_changed:
+            return self
+        self.audit = self.get_changes()
         self.updated_at = datetime.now()
         return await super().save(session, link_rule, ignore_revision, **kwargs)
 
@@ -35,3 +38,16 @@ class Base(Document):
     @classmethod
     def get_actions(cls) -> List[str]:
         return cls.__action__
+
+    # State Management Methods
+    @classmethod
+    def use_state_management(cls) -> bool:
+        return True
+
+    @classmethod
+    def state_management_save_previous(cls) -> bool:
+        return True
+
+    @classmethod
+    def state_management_replace_objects(cls) -> bool:
+        return False  # Không replace objects để tránh stale references
