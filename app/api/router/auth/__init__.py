@@ -425,37 +425,34 @@ async def my_business(request: Request):
     include_in_schema=True,
 )
 async def reset_permission(task: BackgroundTasks):
-    async def update_permission():
-        admin_permissions = await permissionService.find_many(
-            conditions={
-                "code": {"$regex": r"\.(businesstype|business|plan|group|user|extendorder|permission)$"},
+    admin_permissions = await permissionService.find_many(
+        conditions={
+            "code": {"$regex": r"\.(businesstype|business|plan|group|user|extendorder|permission)$"},
+        },
+    )
+    business_permissions = await permissionService.find_many(
+        conditions={
+            "code": {
+                "$not": {"$regex": r"\.(businesstype|business|plan)$"},
             },
-        )
-        business_permissions = await permissionService.find_many(
-            conditions={
-                "code": {
-                    "$not": {"$regex": r"\.(businesstype|business|plan|permission)$"},
-                },
-            },
-        )
-        staff_permissions = await permissionService.find_many(
-            conditions={
-                "$or": [
-                    {"code": {"$regex": r"^view.*(area|branch|order|category|subcategory)$"}},
-                    {"code": {"$regex": r"^view.*(serviceunit|product|request)$"}},
-                    {"code": {"$regex": r"^update.*(order|request)$"}},
-                ]
-            },
-        )
-        users = await userService.find_many()
-        for user in users:
-            if user.role == "Admin":
-                user.permissions = admin_permissions
-            if user.role == "BusinessOwner":
-                user.permissions = business_permissions
-            if user.role == "Staff":
-                user.permissions = staff_permissions
-            await user.save()
-
-    task.add_task(update_permission)
+        },
+    )
+    staff_permissions = await permissionService.find_many(
+        conditions={
+            "$or": [
+                {"code": {"$regex": r"^view.*(area|branch|order|category|subcategory)$"}},
+                {"code": {"$regex": r"^view.*(serviceunit|product|request)$"}},
+                {"code": {"$regex": r"^update.*(order|request)$"}},
+            ]
+        },
+    )
+    users = await userService.find_many()
+    for user in users:
+        if user.role == "Admin":
+            user.permissions = admin_permissions
+        if user.role == "BusinessOwner":
+            user.permissions = business_permissions
+        if user.role == "Staff":
+            user.permissions = staff_permissions
+        await user.save()
     return Response(data=True)
