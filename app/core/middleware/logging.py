@@ -73,7 +73,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "duration": duration,
                 "status_code": status_code,
                 "error": type(e).__name__,
-                "detail": traceback.format_stack().split("\n")[-2],
+                "detail": traceback.format_exc().split("\n")[-2],
             }
             logger.error(json.dumps(log_data))
             return JSONResponse(
