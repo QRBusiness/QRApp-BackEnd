@@ -63,4 +63,4 @@ USER appuser
 EXPOSE 8000
 
 # Run FastAPI with Uvicorn
-CMD ["/app/.venv/bin/gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers=2"]
+CMD ["/app/.venv/bin/gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers=5"]
