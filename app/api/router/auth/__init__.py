@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import RedirectResponse
 from fastapi_mail import MessageSchema, MessageType
 from jwt.exceptions import ExpiredSignatureError
 
@@ -244,8 +244,7 @@ async def confirm_email(
                 "email_verified": True,
             },
         )
-        with open("./app/templates/success.html", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+        return RedirectResponse(url=settings.FRONTEND_HOST)
     except ExpiredSignatureError as e:
         raise HTTP_400_BAD_REQUEST("Thời gian xác minh hết hạn.") from e
 
