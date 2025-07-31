@@ -32,6 +32,9 @@ class FullGroupResponse(GroupResponse):
 
         data = model.model_dump()
         users = await userService.find_many(
-            conditions={"group.$id": {"$in": [model.id]}}, projection_model=UserResponse
+            conditions={"group.$id": {"$in": [model.id]}},
         )
+        for user in users:
+            await user.fetch_link("branch")
+        users = [UserResponse(**user.model_dump()) for user in users]
         return cls(**data, users=users)
