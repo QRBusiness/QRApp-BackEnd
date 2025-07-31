@@ -263,22 +263,27 @@ async def put_user(
     request: Request,
 ):
     if request.state.user_role != "Admin":
-        user = await userService.find_one(
-            {
-                "_id": id,
-                "role": "Staff",
-            }
-        )
-        if user is None or user.business.to_ref().id != PydanticObjectId(request.state.user_scope):
-            raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng trong doanh nghiệp của bạn")
+        if (
+            await userService.find_one(
+                conditions={
+                    "_id": id,
+                    "role": "Staff",
+                    "business.$id": PydanticObjectId(request.state.user_scope),
+                },
+            )
+            is None
+        ):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng")
     else:
-        user = await userService.find_one(
-            {"_id": id},
-        )
-        if user is None:
-            raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng trong doanh nghiệp của bạn")
+        if (
+            await userService.find_one(
+                conditions={"_id": id},
+            )
+            is None
+        ):
+            raise HTTP_404_NOT_FOUND("Không tìm thấy người dùng")
     user = await userService.update(id, data)
-    await user.fetch_all_links()
+    await user.fetch_link("branch")
     return Response(data=user)
 
 
