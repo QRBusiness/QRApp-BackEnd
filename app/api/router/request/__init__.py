@@ -125,7 +125,7 @@ async def request_extend(
     contents = await image.read()
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"/transaction/{request.state.user_id}_{image.filename}",
+        object_name=f"transaction/{request.state.user_id}_{image.filename}",
         content_type=image.content_type,
     )
     await extendOrderService.insert(ExtenOrderCreate(business=business, plan=plan, image=QRCode.get_url(object_name)))
@@ -137,7 +137,9 @@ async def request_extend(
     dependencies=[
         Depends(login_required),
         Depends(
-            role_required(role=["BusinessOwner", "Staff"]),
+            role_required(
+                role=["BusinessOwner", "Staff"],
+            ),
         ),
     ],
     response_model=Response[List[ResquestResponse]],
@@ -150,7 +152,6 @@ async def get_requests(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
-    req = request
     conditions = {"business._id": PydanticObjectId(request.state.user_scope)}
     if request.state.user_branch:
         conditions["branch._id"] = PydanticObjectId(request.state.user_branch)
@@ -172,25 +173,20 @@ async def get_requests(
                 name="Không xác định",
                 branch=(
                     BranchResponse(
-                        id=request.branch.to_dict().get("id"), name="Không xác định", address="Không xác định"
+                        id=request.branch.to_dict().get("id"),
+                        name="Không xác định",
+                        address="Không xác định",
                     )
                     if isinstance(request.branch, Link)
                     else request.branch
                 ),
             )
-    total_items = await requestService.count(
-        conditions={
-            k: v
-            for k, v in {"status": status, "type": type, "business.$id": PydanticObjectId(req.state.user_scope)}.items()
-            if v is not None
-        }
-    )
     return Response(
         data=requests,
         pagination=Pagination(
             current_page=page,
             per_page=limit,
-            total_items=total_items,
+            total_items=await requestService.count(conditions),
         ),
     )
 

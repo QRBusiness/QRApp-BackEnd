@@ -327,7 +327,7 @@ async def post_image_product(
     contents = await image.read()
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"/product/product_{id}_{image.filename}",
+        object_name=f"product/product_{id}_{image.filename}",
         content_type=image.content_type,
     )
     product = await productService.update(id, {"img_url": QRCode.get_url(object_name)})

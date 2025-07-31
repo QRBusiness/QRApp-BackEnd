@@ -1,5 +1,6 @@
 import json
 import time
+import traceback
 from datetime import datetime
 from typing import Any, Dict
 
@@ -39,6 +40,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "duration": duration,
                 "status_code": response.status_code,
                 "error": None,
+                "detail": None,
             }
             logger.info(json.dumps(log_data))
             return response
@@ -71,6 +73,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "duration": duration,
                 "status_code": status_code,
                 "error": type(e).__name__,
+                "detail": traceback.format_stack().split("\n")[-2],
             }
             logger.error(json.dumps(log_data))
             return JSONResponse(

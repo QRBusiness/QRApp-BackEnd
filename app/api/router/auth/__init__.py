@@ -312,7 +312,7 @@ async def upload_logo(
         raise HTTP_400_BAD_REQUEST(message="Ảnh vượt quá 2MB")
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"/logo/{request.state.user_id}_{logo.filename}",
+        object_name=f"logo/{request.state.user_id}_{logo.filename}",
         content_type=logo.content_type,
     )
     if not await businessService.update(
@@ -342,7 +342,7 @@ async def upload_avatar(
         raise HTTP_400_BAD_REQUEST(message="Ảnh vượt quá 2MB")
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"/avatar/{request.state.user_id}_{avatar.filename}",
+        object_name=f"avatar/{request.state.user_id}_{avatar.filename}",
         content_type=avatar.content_type,
     )
     user = await userService.update(

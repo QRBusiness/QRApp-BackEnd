@@ -135,7 +135,7 @@ async def post_qrcode(
     contents = await qr_code.read()
     object_name = QRCode.upload(
         object=contents,
-        object_name=f"/qrcode/{id}_{qr_code.filename}",
+        object_name=f"qrcode/{id}_{qr_code.filename}",
         content_type=qr_code.content_type,
     )
     service = await unitService.update(
