@@ -147,6 +147,9 @@ async def request_extend(
 @limiter(max_request=10)
 async def get_requests(
     request: Request,
+    branch: Optional[PydanticObjectId] = Query(default=None, description="Lọc theo chi nhánh"),
+    area: Optional[PydanticObjectId] = Query(default=None, description="Lọc theo khu vực"),
+    service_unit: Optional[PydanticObjectId] = Query(default=None, description="Lọc theo dịch vụ"),
     status: Optional[RequestStatus] = Query(default=None, description="Lọc theo trạng thái"),
     type: Optional[RequestType] = Query(default=None, description="Lọc theo type"),
     page: int = Query(default=1, ge=1),
@@ -155,6 +158,13 @@ async def get_requests(
     conditions = {"business._id": PydanticObjectId(request.state.user_scope)}
     if request.state.user_branch:
         conditions["branch._id"] = PydanticObjectId(request.state.user_branch)
+    else:
+        if branch:
+            conditions["branch._id"] = branch
+    if area:
+        conditions["area._id"] = area
+    if service_unit:
+        conditions["service_unit._id"] = service_unit
     if status:
         conditions["status"] = status.value
     if type:
