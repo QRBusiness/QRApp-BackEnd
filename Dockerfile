@@ -29,7 +29,7 @@ RUN uv lock
 # Create virtual environment and install dependencies
 RUN uv venv && \
     uv pip install --upgrade pip && \
-    uv sync --frozen --no-cache && \
+    uv sync --no-dev --frozen --no-cache && \
     find .venv -name '*.pyc' -delete && \
     find .venv -name '__pycache__' -type d -exec rm -rf {} +
 
