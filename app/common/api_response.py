@@ -12,7 +12,12 @@ Object = TypeVar("T")
 
 class GlobalJSONResponse(JSONResponse):
     def render(self, content) -> bytes:
-        return super().render(jsonable_encoder(content, exclude_none=True))
+        encoded = jsonable_encoder(content)
+
+        if isinstance(encoded, dict) and encoded.get("pagination") is None:
+            encoded.pop("pagination")
+
+        return super().render(encoded)
 
 
 class Pagination(BaseModel):
