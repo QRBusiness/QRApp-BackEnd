@@ -1,8 +1,10 @@
 from typing import List, Literal, Optional
+from urllib.parse import urlparse, urlunparse
 
 from beanie import Link, PydanticObjectId
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_serializer
 
+from app.core.config import settings
 from app.models import Business, Group, Permission
 from app.schema import BaseResponse
 from app.schema.branch import BranchResponse
@@ -130,6 +132,16 @@ class FullUserResponse(BaseResponse):
     branch: Optional[BranchResponse] = None
     available: bool
 
+    @field_serializer("image_url")
+    def serialize_image_url(self, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            parsed = urlparse(value)
+            if parsed.netloc == settings.MINIO_ENDPOINT:
+                base = urlparse(settings.BASE_URL)
+                new_url = parsed._replace(netloc=base.netloc, scheme=base.scheme)
+                return urlunparse(new_url)
+        return value
+
 
 class UserResponse(BaseResponse):
     username: Optional[str] = None
@@ -142,3 +154,13 @@ class UserResponse(BaseResponse):
     role: Optional[str] = None
     branch: Optional[BranchResponse] = None
     available: bool
+
+    @field_serializer("image_url")
+    def serialize_image_url(self, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            parsed = urlparse(value)
+            if parsed.netloc == settings.MINIO_ENDPOINT:
+                base = urlparse(settings.BASE_URL)
+                new_url = parsed._replace(netloc=base.netloc, scheme=base.scheme)
+                return urlunparse(new_url)
+        return value

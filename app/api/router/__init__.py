@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 
 from app.api.dependency import login_required, role_required
 from app.api.router.area import apiRouter as areaRouter
@@ -22,6 +23,7 @@ from app.api.router.service_unit import apiRouter as serviceRouter
 from app.api.router.user import apiRouter as userRouter
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
+from app.db import QRCode
 from app.socket import manager
 
 api = APIRouter()
@@ -111,9 +113,20 @@ def health_check():
     return Response(data=True)
 
 
+@api.get(
+    tags=["Proxy MinIO"],
+    path="/{bucket}/{object_path:path}",
+)
+async def proxy_minio(bucket: str, object_path: str):
+    response = QRCode.client.get_object(
+        bucket_name=bucket,
+        object_name=object_path,
+    )
+    return StreamingResponse(response)
+
+
 # Handle Undefined API
 @api.api_route(
-    tags=["Proxy"],
     path="/{path:path}",
     methods=["GET", "POST"],
     include_in_schema=False,

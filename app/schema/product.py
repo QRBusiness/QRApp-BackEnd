@@ -1,8 +1,10 @@
 from typing import List, Optional
+from urllib.parse import urlparse, urlunparse
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
+from app.core.config import settings
 from app.models.product import Option
 from app.schema import BaseResponse
 from app.schema.category import CategoryResponse, SubCategoryResponse
@@ -30,6 +32,16 @@ class ProductResponse(BaseResponse):
     options: Optional[List[Option]] = []
     img_url: Optional[str] = None
 
+    @field_serializer("img_url")
+    def serialize_image_url(self, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            parsed = urlparse(value)
+            if parsed.netloc == settings.MINIO_ENDPOINT:
+                base = urlparse(settings.BASE_URL)
+                new_url = parsed._replace(netloc=base.netloc, scheme=base.scheme)
+                return urlunparse(new_url)
+        return value
+
 
 class FullProductResponse(BaseResponse):
     name: str
@@ -40,6 +52,16 @@ class FullProductResponse(BaseResponse):
     category: CategoryResponse
     img_url: Optional[str] = None
     # business: BusinessResponse
+
+    @field_serializer("img_url")
+    def serialize_image_url(self, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            parsed = urlparse(value)
+            if parsed.netloc == settings.MINIO_ENDPOINT:
+                base = urlparse(settings.BASE_URL)
+                new_url = parsed._replace(netloc=base.netloc, scheme=base.scheme)
+                return urlunparse(new_url)
+        return value
 
 
 # ----------- Import Menu

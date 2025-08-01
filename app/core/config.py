@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     # Database
     MONGO_URL: str | None = None
     MONGO_DATABASE: str = "QRApp"
+    # MINIO
     MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_SECURE: bool = True
     MINIO_ACCESS_KEY: str | None = None
     MINIO_SECRET_KEY: str | None = None
     # Session
