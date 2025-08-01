@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     REDIS_URL: str | None = None
     # ADMIN ACOUNT
     ADMIN_USERNAME: str = "admin"
-    ADMIN_PASSWORD: str = "admin"
+    ADMIN_PASSWORD: str = "@Admin123"
     # Logging
     LOG_FILE: str = "./logs/app.log"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"

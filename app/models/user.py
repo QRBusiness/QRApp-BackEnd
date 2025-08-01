@@ -6,6 +6,7 @@ from pydantic import Field
 from pymongo import IndexModel
 from typing_extensions import Self
 
+from app.common.http_exception import HTTP_400_BAD_REQUEST
 from app.models.branch import Branch
 from app.models.business import Business
 from app.models.group import Group
@@ -37,6 +38,20 @@ class User(Base):
 
     @before_event(Insert)
     def hash_password(self):
+        # Validation Data
+        import re
+
+        EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
+        PHONE_REGEX = re.compile(r"^(0[3|5|7|8|9])[0-9]{8}$")
+        PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,32}$")
+        if self.email and not EMAIL_REGEX.fullmatch(self.email):
+            raise HTTP_400_BAD_REQUEST("Email không hợp lệ")
+        # Validate phone
+        if self.phone and not PHONE_REGEX.fullmatch(self.phone):
+            raise HTTP_400_BAD_REQUEST("Số điện thoại không hợp lệ")
+        # Validate password
+        if not PASSWORD_REGEX.fullmatch(self.password):
+            raise HTTP_400_BAD_REQUEST("Mật khẩu dài từ 6-32 kí tự (Gồm chữ hoa, thường, số)")
         if not self.password.startswith("$2b$"):
             self.password = bcrypt.hashpw(self.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
