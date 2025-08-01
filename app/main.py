@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="QRApp Backend",
-    description="""
+    description=f"""
 ### 🔹 Tính năng
 
 - **Quản lý doanh nghiệp**
@@ -58,8 +58,8 @@ app = FastAPI(
 
 ### 📚 Tài liệu
 
-- Swagger UI: `/docs`
-- ReDoc: `/redoc`
+- Swagger UI: `{settings.BASE_URL}/docs`
+- ReDoc: `{settings.BASE_URL}/redoc`
 """,
     debug=False,
     lifespan=lifespan,
