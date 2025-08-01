@@ -5,7 +5,7 @@ from typing import List, Optional
 from beanie import Link, PydanticObjectId
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from app.api.dependency import login_required, permission_required, role_required
+from app.api.dependency import login_required, role_required
 from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from app.core.config import settings
@@ -64,11 +64,6 @@ async def get_extends(
         Depends(
             role_required(
                 role=["Admin"],
-            ),
-        ),
-        Depends(
-            permission_required(
-                permissions=["update.extendorder"],
             ),
         ),
     ],

@@ -45,5 +45,3 @@ class ExtendOrder(Base):
     image: str = Field(..., description="Ảnh xác minh thanh toán")
     payment_method: PaymentMethod = Field(default=PaymentMethod.BANK)
     status: OrderStatus = Field(default=OrderStatus.UNPAID)
-
-    __action__: List[str] = ["view", "update"]
