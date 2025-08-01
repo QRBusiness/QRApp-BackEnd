@@ -61,11 +61,14 @@ async def post_service(
     area: PydanticObjectId = Form(),
     qr_code: Optional[UploadFile] = File(default=None),
 ):
-    area = await areaService.find(area)
+    area = await areaService.find_one(
+        conditions={
+            "_id": area,
+            "business.$id": PydanticObjectId(request.state.user_scope),
+        }
+    )
     if area is None:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
-    if PydanticObjectId(request.state.user_scope) != area.business.to_ref().id:
-        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực trong doanh nghiệp của bạn")
+        raise HTTP_404_NOT_FOUND("Không tìm thấy khu vực")
     if qr_code:
         contents = await qr_code.read()
         object_name = QRCode.upload(

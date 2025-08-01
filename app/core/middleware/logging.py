@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 import httpx
 import sentry_sdk
+from bson import DBRef
 from fastapi import Request
 from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
@@ -60,9 +61,23 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 error = KeyResponse.VALIDATION_ERROR
                 message = [f"{error['msg']} {error['loc']}" for error in e.errors()]
             elif isinstance(e, DuplicateKeyError):
+
+                def conflict_message(details: dict) -> str:
+                    key_value = details.get("keyValue", {})
+                    if not key_value:
+                        return "Trùng dữ liệu."
+                    messages = []
+                    for key, value in key_value.items():
+                        if isinstance(value, DBRef):
+                            continue
+                        messages.append(f"Trùng lặp dữ liệu tại '{key}'")
+                    if messages:
+                        return "; ".join(messages)
+                    return "Trùng dữ liệu."
+
                 status_code = 409
                 error = KeyResponse.CONFLICT
-                message = e.details["errmsg"]
+                message = conflict_message(e.details)
             elif isinstance(e, PyMongoError):
                 message = "Không thể xử lý yêu cầu. Vui lòng thử lại sau."
             else:

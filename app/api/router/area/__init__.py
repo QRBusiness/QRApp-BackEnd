@@ -71,8 +71,8 @@ async def post_area(data: AreaCreate, request: Request):
     branch = await branchService.find(data.branch)
     if branch is None or branch.business.to_ref().id != business.id:
         raise HTTP_404_NOT_FOUND("Không tìm thấy chi nhánh")
-    if await areaService.find_one({"branch.$id": branch.id, "name": {"$regex": f"^{data.name}$", "$options": "i"}}):
-        raise HTTP_409_CONFLICT("Khu vực đã tồn tại")
+    # if await areaService.find_one({"branch.$id": branch.id, "name": {"$regex": f"^{data.name}$", "$options": "i"}}):
+    #     raise HTTP_409_CONFLICT("Khu vực đã tồn tại")
     data = data.model_dump()
     data["business"] = business
     area = await areaService.insert(data)
