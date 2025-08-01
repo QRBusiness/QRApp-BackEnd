@@ -120,12 +120,20 @@ def sign_out(data: Session, request: Request):
     return Response(data="Đăng xuất thành công")
 
 
-@apiRouter.post(path="/refresh-token", name="Làm mới token", response_model=Response[Token])
+@apiRouter.post(
+    path="/refresh-token",
+    name="Làm mới token",
+    response_model=Response[Token],
+    status_code=200,
+)
 def refresh_token(data: Session):
-    payload = REFRESH_JWT.decode(data.refresh_token)
-    payload.pop("exp")
-    access_token = ACCESS_JWT.encode(payload)
-    return Response(data=Token(access_token=access_token, refresh_token=data.refresh_token))
+    try:
+        payload = REFRESH_JWT.decode(data.refresh_token)
+        payload.pop("exp")
+        access_token = ACCESS_JWT.encode(payload)
+        return Response(data=Token(access_token=access_token, refresh_token=data.refresh_token))
+    except ExpiredSignatureError as e:
+        raise HTTP_401_UNAUTHORZIED("Expired Signature Error") from e
 
 
 @apiRouter.post(
