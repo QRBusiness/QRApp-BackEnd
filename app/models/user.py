@@ -23,7 +23,9 @@ class User(Base):
     email: Optional[str] = Field(default=None, pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
     email_verified: bool = Field(default=False)
     address: Optional[str] = Field(default=None, nullable=True)
-    image_url: Optional[str] = Field(default=None)
+    image_url: Optional[str] = Field(
+        default="https://t3.ftcdn.net/jpg/05/79/68/24/360_F_579682465_CBq4AWAFmFT1otwioF5X327rCjkVICyH.jpg",
+    )
     role: Literal["Admin", "BusinessOwner", "Staff"] = Field(default="Staff")
     available: bool = Field(True)
     permissions: List[Link[Permission]] = Field(default_factory=list)

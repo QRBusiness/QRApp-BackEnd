@@ -20,7 +20,7 @@ class Product(Base):
     variants: List[Option] = Field(default_factory=list, description="Các biến thể của sản phẩm")
     options: List[Option] = Field(default_factory=list, description="Các option đi kèm của sản phẩm")
     img_url: Optional[str] = Field(
-        default="https://readdy.ai/api/search-image?query=Gourmet avocado toast with poached egg on sourdough bread, topped with cherry tomatoes and microgreens, professional food photography, bright natural lighting, shallow depth of field, appetizing presentation, isolated on light neutral background, high resolution&width=400&height=400&seq=1&orientation=squarish",  # noqa: E501
+        default="https://t3.ftcdn.net/jpg/05/79/68/24/360_F_579682465_CBq4AWAFmFT1otwioF5X327rCjkVICyH.jpg",
         description="Ảnh mô tả",
     )
     # Refer - Hỗ trợ lọc

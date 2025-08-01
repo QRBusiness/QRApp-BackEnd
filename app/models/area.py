@@ -15,7 +15,10 @@ class Area(Base):
         description="Khu vực trong doanh nghiệp (Tầng 1, Khu A, Quầy tiếp tân...)",
     )
     description: Optional[str] = Field(None, description="Mô tả thêm về khu vực")
-    image_url: Optional[str] = Field(None, description="Đường dẫn ảnh minh họa khu vực (nếu có)")
+    image_url: Optional[str] = Field(
+        default="https://t3.ftcdn.net/jpg/05/79/68/24/360_F_579682465_CBq4AWAFmFT1otwioF5X327rCjkVICyH.jpg",
+        description="Đường dẫn ảnh minh họa khu vực (nếu có)",
+    )
     branch: Link[Branch] = Field(..., description="Chi nhánh sở hữu")
     business: Link[Business] = Field(..., description="Doanh nghiệp sở hữu khu vực này")
 

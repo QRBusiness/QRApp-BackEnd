@@ -10,7 +10,9 @@ from app.models.base import Base
 
 class ServiceUnit(Base):
     name: str = Field(...)
-    qr_code: Optional[str] = Field(default=None)
+    qr_code: Optional[str] = Field(
+        default="https://t3.ftcdn.net/jpg/05/79/68/24/360_F_579682465_CBq4AWAFmFT1otwioF5X327rCjkVICyH.jpg",
+    )
     available: bool = Field(default=True)
     area: Link[Area] = Field(...)
     branch: Link[Branch] = Field(...)
