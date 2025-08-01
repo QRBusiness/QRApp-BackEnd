@@ -60,13 +60,18 @@ class MongoDB:
         except Exception as e:
             logger.error(e)
         # Init Admin
-        if not await userService.find_one({"username": "admin"}):
-            await userService.insert(
-                Administrator(
-                    username=settings.ADMIN_USERNAME,
-                    password=settings.ADMIN_PASSWORD,
+        async with userService.transaction(self.client) as session:
+            if not await userService.find_one(
+                conditions={"username": "admin"},
+                session=session,
+            ):
+                await userService.insert(
+                    Administrator(
+                        username=settings.ADMIN_USERNAME,
+                        password=settings.ADMIN_PASSWORD,
+                    ),
+                    session=session,
                 )
-            )
         return self
 
 
