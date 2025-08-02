@@ -23,7 +23,7 @@ class ServiceUnitResponse(BaseResponse):
     qr_code: Optional[str] = None
     area: Optional[AreaResponse] = None
 
-    @field_serializer("img_url")
+    @field_serializer("qr_code")
     def serialize_qr_code(self, value: Optional[str]) -> Optional[str]:
         if value is not None:
             parsed = urlparse(value)
