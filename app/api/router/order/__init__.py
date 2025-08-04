@@ -67,8 +67,8 @@ async def report(
     product: Optional[PydanticObjectId] = Query(default=None, description="Sản phẩm"),
     staff: Optional[PydanticObjectId] = Query(default=None, description="Nhân viên"),
     method: Optional[PaymentMethod] = Query(default=None, description="Phương thức thanh toán"),
-    start_date: Optional[datetime] = Query(default=None, description="Từ ngày"),
-    end_date: Optional[datetime] = Query(default=None, description="Đến ngày"),
+    start_date: Optional[str] = Query(default=None, description="Từ ngày"),
+    end_date: Optional[str] = Query(default=None, description="Đến ngày"),
 ):
     if request.state.user_role != "BusinessOwner":
         raise HTTP_403_FORBIDDEN("Bạn không đủ quyền thực hiện hành động này")
@@ -89,10 +89,14 @@ async def report(
     if product:
         conditions["items.product.$id"] = product
     if start_date and end_date:
+        start_date = datetime.fromisoformat(start_date)
+        end_date = datetime.fromisoformat(end_date)
         conditions["created_at"] = {"$gte": start_date, "$lte": end_date}
     elif start_date:
+        start_date = datetime.fromisoformat(start_date)
         conditions["created_at"] = {"$gte": start_date}
     elif end_date:
+        end_date = datetime.fromisoformat(end_date)
         conditions["created_at"] = {"$lte": end_date}
     from pprint import pprint
 
