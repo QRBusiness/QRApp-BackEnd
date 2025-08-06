@@ -65,6 +65,9 @@ app = FastAPI(
     lifespan=lifespan,
     version=settings.APP_VERSION,
     default_response_class=GlobalJSONResponse,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 # Middleware
 app.add_middleware(TraceMiddleware)
