@@ -11,6 +11,7 @@ from fastapi import Request
 from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
+from minio.error import S3Error
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -54,6 +55,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             message = get_message(KeyResponse.SERVER_ERROR)
             if isinstance(e, httpx.ConnectTimeout):
                 message = "Hệ thống đang bận, vui lòng thử lại sau."
+            if isinstance(e, S3Error):
+                message = e.message
             elif isinstance(e, ResponseValidationError):
                 status_code = 422
                 error = KeyResponse.VALIDATION_ERROR
