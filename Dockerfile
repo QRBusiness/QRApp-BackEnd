@@ -62,5 +62,7 @@ USER appuser
 
 EXPOSE 8000
 
-# Run FastAPI with Uvicorn
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:8000/health-check || exit 1
+
+# Run FastAPI with Gunicorn
 CMD ["/app/.venv/bin/gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers=2"]
