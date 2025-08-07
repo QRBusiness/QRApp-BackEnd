@@ -62,7 +62,8 @@ USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD .venv/bin/python -c "import httpx,sys; r = httpx.get('http://localhost:8000/health-check'); sys.exit(0) if r.status_code==200 else sys.exit(1)"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD .venv/bin/python -c "import httpx,sys; r = httpx.get('http://localhost:8000/health-check'); sys.exit(0) if r.status_code==200 else sys.exit(1)"
 
 # Run FastAPI with Gunicorn
 CMD ["/app/.venv/bin/gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers=2"]
