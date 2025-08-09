@@ -22,14 +22,24 @@ from app.common.api_message import KeyResponse, get_message
 class LoggingMiddleware(BaseHTTPMiddleware):
     def _get_request_info(self, request: Request) -> Dict[str, Any]:
         """Extract common request information"""
+        h = request.headers
         x_forwarded_for = request.headers.get("x-forwarded-for")
         real_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.client.host
         return {
-            "request_id": request.state.request_id,
-            "host": real_ip,
-            "user_agent": request.headers.get("user-agent", "unknown"),
+            "request_id": getattr(request.state, "request_id", None),
+            "client_ip": real_ip,
+            "x_forwarded_for": x_forwarded_for,
+            "x_real_ip": h.get("x-real-ip"),
+            "forwarded_proto": h.get("x-forwarded-proto"),
+            "forwarded_port": h.get("x-forwarded-port"),
+            "forwarded_host": h.get("x-forwarded-host"),
             "method": request.method,
             "path": request.url.path,
+            "query": str(request.url.query),
+            "user_agent": h.get("user-agent"),
+            "referer": h.get("referer"),
+            "origin": h.get("origin"),
+            "request_start": h.get("x-request-start"),
         }
 
     async def dispatch(self, request: Request, call_next):
