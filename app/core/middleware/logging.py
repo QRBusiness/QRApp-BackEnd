@@ -39,7 +39,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             "user_agent": h.get("user-agent"),
             "referer": h.get("referer"),
             "origin": h.get("origin"),
-            "request_start": h.get("x-request-start"),
         }
 
     async def dispatch(self, request: Request, call_next):
