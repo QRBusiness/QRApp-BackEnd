@@ -23,7 +23,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 #### 2. Clone repository
 
 ```bash
-git clone https://github.com/QRCoffee/QRApp-BackEnd.git
+git clone https://github.com/QRBusiness/QRApp-BackEnd.git
 cd QRApp-BackEnd
 ```
 
