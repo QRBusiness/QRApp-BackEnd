@@ -246,7 +246,7 @@ async def get_product(
 async def load_menu(
     request: Request,
     menu: UploadFile = File(description="Menu"),
-    flag: bool = Form(default=False, description="Xóa Menu cũ"),
+    overwrite: bool = Form(default=False, description="Xóa Menu cũ"),
 ):
     def parse_price_list(price_str):
         if pd.isna(price_str):
@@ -289,6 +289,18 @@ async def load_menu(
     menu: Menu = Menu.model_validate(menu_json)
     business_id = PydanticObjectId(request.state.user_scope)
     async with productService.transaction(Mongo.client) as session:
+        if overwrite:
+            old_categories = await categoryService.find_many(conditions={"business.$id": business_id}, session=session)
+            for category in old_categories:
+                await categoryService.delete(id=category.id, session=session)
+                await subcategoryService.delete_many(
+                    conditions={"category.$id": category.id},
+                    session=session,
+                )
+                await productService.delete_many(
+                    conditions={"category.$id": category.id},
+                    session=session,
+                )
         for cat in menu.categories:
             category_doc = await Category(
                 name=cat.name,
