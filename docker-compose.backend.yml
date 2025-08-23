@@ -1,6 +1,6 @@
 services:
   qrapp-backend:
-    image: nhathuyd4hp/qrapp-backend:latest
+    image: nhathuyd4hp/qrapp-backend:dev
     container_name: api.qrapp
     pull_policy: always
     environment:

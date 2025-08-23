@@ -1,13 +1,16 @@
+import io
 from typing import List
 
+import pandas as pd
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 from app.core.config import settings
 from app.schema.business import BusinessTypeCreate, BusinessTypeResponse, BusinessTypeUpdate
+from app.schema.product import Menu
 from app.service import businessService, businessTypeService
 
 apiRouter = APIRouter(
@@ -66,6 +69,63 @@ async def post_business_type(data: BusinessTypeCreate | List[BusinessTypeCreate]
         raise HTTP_409_CONFLICT(f"{data.name} đã tồn tại")
     data = await businessTypeService.insert(data)
     return Response(data=data)
+
+
+@apiRouter.post(
+    path="/menu/{id}",
+    name="Menu Mặc Định",
+    response_model=Response[bool],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=[
+                    "update.businesstype",
+                ],
+            ),
+        ),
+    ],
+)
+async def upload_default_menu(
+    id: PydanticObjectId,
+    menu: UploadFile = File(description="Menu"),
+):
+    def parse_price_list(price_str):
+        if pd.isna(price_str):
+            return []
+        result = []
+        for item in price_str.split(","):
+            if ":" in item:
+                t, p = item.split(":")
+                result.append({"type": t.strip(), "price": int(p)})
+        return result
+
+    # -- #
+    if await businessTypeService.find(id) is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy")
+    menu = await menu.read()
+    menu: pd.DataFrame = pd.read_excel(io.BytesIO(menu))
+    menu = menu[1:]
+    #
+    menu_json = {"categories": []}
+    for cat, cat_df in menu.groupby("Category"):
+        cat_dict = {"name": cat, "description": "", "subcategories": []}
+        for sub, sub_df in cat_df.groupby("Subcategory"):
+            sub_dict = {"name": sub, "description": "", "products": []}
+            for _, row in sub_df.iterrows():
+                product = {
+                    "name": row["Product"],
+                    "description": row["Description"],
+                    "variants": parse_price_list(row["Size_Price"]),
+                    "options": parse_price_list(row["Options_Price"]),
+                    "img_url": row["Image"] if pd.notna(row["Image"]) else None,
+                }
+                sub_dict["products"].append(product)
+            cat_dict["subcategories"].append(sub_dict)
+        menu_json["categories"].append(cat_dict)
+    # ---- Parse Excel to Json
+    menu: Menu = Menu.model_validate(menu_json)
+    await businessTypeService.update(id=id, data={"menu": menu})
+    return Response(data=True)
 
 
 @apiRouter.put(
