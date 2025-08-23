@@ -28,9 +28,9 @@ steps:
         - BUILDKIT_INLINE_CACHE=1
       cache_from:
         - nhathuyd4hp/qrapp-backend:latest
-      when:
-        branch:
-          - main
+    when:
+      branch:
+        - main
 
   - name: Build & Push Docker Image (dev)
     image: plugins/docker
@@ -46,9 +46,9 @@ steps:
         - BUILDKIT_INLINE_CACHE=1
       cache_from:
         - nhathuyd4hp/qrapp-backend:dev
-      when:
-        branch:
-          - dev
+    when:
+      branch:
+        - dev
 
   - name: Deploy to VPS
     image: ghcr.io/appleboy/drone-ssh
