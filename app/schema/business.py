@@ -24,6 +24,7 @@ class BusinessTypeUpdate(BaseModel):
 class BusinessTypeResponse(BaseResponse):
     name: str
     description: Optional[str] = None
+    menu: Optional[Menu] = None
 
 
 class BusinessCreate(BaseModel):
