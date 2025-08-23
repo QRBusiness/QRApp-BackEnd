@@ -170,7 +170,7 @@ async def post_business(data: BusinessRegister):
             ),
             session=session,
         )
-        if data.default_menu:
+        if data.default_menu and b_type.menu:
             from app.models import Category, Product, SubCategory
 
             menu = b_type.menu
