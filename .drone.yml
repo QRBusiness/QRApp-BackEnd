@@ -9,11 +9,12 @@ clone:
 trigger:
   branch:
     - main
+    - dev
   event:
     - push
 
 steps:
-  - name: Build & Push Docker Image
+  - name: Build & Push Docker Image (main)
     image: plugins/docker
     settings:
       username:
@@ -27,6 +28,28 @@ steps:
         - BUILDKIT_INLINE_CACHE=1
       cache_from:
         - nhathuyd4hp/qrapp-backend:latest
+      when:
+        branch:
+          - main
+
+  - name: Build & Push Docker Image (dev)
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: DOCKERHUB_USERNAME # pragma: allowlist secret
+      password:
+        from_secret: DOCKERHUB_TOKEN # pragma: allowlist secret
+      repo: nhathuyd4hp/qrapp-backend
+      tags:
+        - latest
+      build_args:
+        - BUILDKIT_INLINE_CACHE=1
+      cache_from:
+        - nhathuyd4hp/qrapp-backend:dev
+      when:
+        branch:
+          - dev
+
   - name: Deploy to VPS
     image: ghcr.io/appleboy/drone-ssh
     settings:
