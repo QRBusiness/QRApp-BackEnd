@@ -1,9 +1,11 @@
+import io
 import uuid
 from typing import List, Optional
 
 import httpx
+import pandas as pd
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
 from app.api.dependency import login_required, permission_required, role_required
 from app.common.api_response import Pagination, Response
@@ -12,7 +14,7 @@ from app.core.config import settings
 from app.db import Mongo, QRCode
 from app.schema.category import CategoryResponse, SubCategoryResponse
 from app.schema.plan import PlanResponse
-from app.schema.product import FullProductResponse, Menu, ProductCreate, ProductResponse, ProductUpdate
+from app.schema.product import FullProductResponse, ProductCreate, ProductResponse, ProductUpdate
 from app.schema.user import UserResponse
 from app.service import categoryService, paymentService, planService, productService, subcategoryService, userService
 
@@ -231,8 +233,8 @@ async def get_product(
 @private_apiRouter.post(
     path="/import",
     name="Menu sản phẩm",
-    status_code=201,
-    response_model=Response[bool],
+    status_code=200,
+    response_model=Response,
     dependencies=[
         Depends(
             permission_required(
@@ -241,9 +243,20 @@ async def get_product(
         ),
     ],
 )
-async def load_menu(menu: Menu, request: Request):
+async def load_menu(
+    request: Request,
+    menu: UploadFile = File(description="Menu"),
+    flag: bool = Form(default=False, description="Xóa Menu cũ"),
+):
     from app.models import Category, Product, SubCategory
 
+    # ---- Parse Excel to Json
+    if not menu.filename.endswith(".xlsx"):
+        raise HTTP_400_BAD_REQUEST("Invalid File Format")
+    menu = await menu.read()
+    menu = pd.read_excel(io.BytesIO(menu))
+    return Response(data=menu.to_json())
+    # ---- Parse Excel to Json
     business_id = PydanticObjectId(request.state.user_scope)
     async with productService.transaction(Mongo.client) as session:
         for cat in menu.categories:
