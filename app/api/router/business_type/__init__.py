@@ -56,6 +56,25 @@ async def get_business_type(
     )
 
 
+@apiRouter.get(
+    path="/{id}",
+    name="Xem loại doanh nghiệp",
+    response_model=Response[BusinessTypeResponse],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["view.businesstype"],
+            ),
+        ),
+    ],
+)
+async def get_business_type_by_id(id: PydanticObjectId):
+    data = await businessTypeService.find(id)
+    if data is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy")
+    return Response(data=data)
+
+
 @apiRouter.post(
     path="",
     name="Tạo loại doanh nghiệp",
