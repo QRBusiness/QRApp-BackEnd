@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.db import Mongo, QRCode
 from app.schema.category import CategoryResponse, SubCategoryResponse
 from app.schema.plan import PlanResponse
-from app.schema.product import FullProductResponse, ProductCreate, ProductResponse, ProductUpdate
+from app.schema.product import FullProductResponse, Menu, ProductCreate, ProductResponse, ProductUpdate
 from app.schema.user import UserResponse
 from app.service import categoryService, paymentService, planService, productService, subcategoryService, userService
 
@@ -234,7 +234,7 @@ async def get_product(
     path="/import",
     name="Menu sản phẩm",
     status_code=200,
-    response_model=Response,
+    response_model=Response[bool],
     dependencies=[
         Depends(
             permission_required(
@@ -248,15 +248,45 @@ async def load_menu(
     menu: UploadFile = File(description="Menu"),
     flag: bool = Form(default=False, description="Xóa Menu cũ"),
 ):
+    def parse_price_list(price_str):
+        if pd.isna(price_str):
+            return []
+        result = []
+        for item in price_str.split(","):
+            if ":" in item:
+                t, p = item.split(":")
+                result.append({"type": t.strip(), "price": int(p)})
+        return result
+
     from app.models import Category, Product, SubCategory
 
     # ---- Parse Excel to Json
     if not menu.filename.endswith(".xlsx"):
         raise HTTP_400_BAD_REQUEST("Invalid File Format")
     menu = await menu.read()
-    menu = pd.read_excel(io.BytesIO(menu))
-    return Response(data=menu.to_json())
+    menu: pd.DataFrame = pd.read_excel(io.BytesIO(menu))
+    menu = menu[1:]
+    #
+    menu_json = {"categories": []}
+    for cat, cat_df in menu.groupby("Category"):
+        cat_dict = {"name": cat, "description": "", "subcategories": []}
+
+        for sub, sub_df in cat_df.groupby("Subcategory"):
+            sub_dict = {"name": sub, "description": "", "products": []}
+
+            for _, row in sub_df.iterrows():
+                product = {
+                    "name": row["Product"],
+                    "description": row["Description"],
+                    "variants": parse_price_list(row["Size_Price"]),
+                    "options": parse_price_list(row["Options_Price"]),
+                    "img_url": row["Image"] if pd.notna(row["Image"]) else None,
+                }
+                sub_dict["products"].append(product)
+            cat_dict["subcategories"].append(sub_dict)
+        menu_json["categories"].append(cat_dict)
     # ---- Parse Excel to Json
+    menu: Menu = Menu.model_validate(menu_json)
     business_id = PydanticObjectId(request.state.user_scope)
     async with productService.transaction(Mongo.client) as session:
         for cat in menu.categories:
