@@ -170,6 +170,34 @@ async def post_business(data: BusinessRegister):
             ),
             session=session,
         )
+        if data.default_menu:
+            from app.models import Category, Product, SubCategory
+
+            menu = b_type.menu
+            for cat in menu.categories:
+                category_doc = await Category(
+                    name=cat.name,
+                    description=cat.description,
+                    business=business.id,
+                ).insert(session=session)
+                for sub in cat.subcategories:
+                    subcategory_doc = await SubCategory(
+                        name=sub.name,
+                        description=sub.description,
+                        category=category_doc.id,
+                        business=business.id,
+                    ).insert(session=session)
+                    for prod in sub.products:
+                        await Product(
+                            name=prod.name,
+                            description=prod.description,
+                            variants=prod.variants,
+                            options=prod.options,
+                            img_url=prod.img_url,
+                            category=category_doc.id,
+                            subcategory=subcategory_doc.id,
+                            business=business.id,
+                        ).insert(session=session)
     user = await userService.find_one(
         conditions={"username": data.username},
         fetch_links=True,

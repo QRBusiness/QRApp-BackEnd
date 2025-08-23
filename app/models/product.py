@@ -4,8 +4,6 @@ from beanie import Link
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
-from app.models import Business, Category, SubCategory
-
 from .base import Base
 
 
@@ -24,9 +22,9 @@ class Product(Base):
         description="Ảnh mô tả",
     )
     # Refer - Hỗ trợ lọc
-    category: Link[Category]
-    subcategory: Link[SubCategory]
-    business: Link[Business]
+    category: "Link[Category]" = Field(...)  # type: ignore  # noqa: F821
+    subcategory: "Link[SubCategory]" = Field(...)  # type: ignore  # noqa: F821
+    business: "Link[Business]" = Field(...)  # type: ignore  # noqa: F821
 
     class Settings:
         indexes = [

@@ -6,16 +6,19 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.models import BusinessType, User
 from app.schema import BaseResponse
+from app.schema.product import Menu
 
 
 class BusinessTypeCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    menu: Optional[Menu] = None
 
 
 class BusinessTypeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    menu: Optional[Menu] = None
 
 
 class BusinessTypeResponse(BaseResponse):

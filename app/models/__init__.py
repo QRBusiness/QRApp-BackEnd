@@ -18,6 +18,7 @@ Request.model_rebuild()
 Order.model_rebuild()
 Payment.model_rebuild()
 ExtendOrder.model_rebuild()
+Product.model_rebuild()
 
 __all__ = [
     "User",

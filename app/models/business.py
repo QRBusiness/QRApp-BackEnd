@@ -5,12 +5,15 @@ from beanie import Link
 from pydantic import Field
 from pymongo import IndexModel
 
+from app.schema.product import Menu
+
 from .base import Base
 
 
 class BusinessType(Base):
-    name: str = Field(..., description="Unique business type name")
-    description: Optional[str] = Field(default=None, description="Optional description")
+    name: str = Field(..., description="Loại hình doanh nghiệp")
+    description: Optional[str] = Field(default=None, description="Mô tả")
+    menu: Optional[Menu] = Field(default=None)
 
     class Settings:
         indexes = [IndexModel([("name", 1)], unique=True)]
