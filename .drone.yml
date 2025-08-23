@@ -41,7 +41,7 @@ steps:
         from_secret: DOCKERHUB_TOKEN # pragma: allowlist secret
       repo: nhathuyd4hp/qrapp-backend
       tags:
-        - latest
+        - dev
       build_args:
         - BUILDKIT_INLINE_CACHE=1
       cache_from:
