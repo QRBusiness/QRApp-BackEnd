@@ -10,4 +10,7 @@ class Plan(Base):
     price: float = Field(...)
 
     class Settings:
-        indexes = [IndexModel([("name", 1)], unique=True), IndexModel([("period", 1)], unique=True)]
+        indexes = [
+            IndexModel([("name", 1)], unique=True),
+            IndexModel([("period", 1)], unique=True),
+        ]
