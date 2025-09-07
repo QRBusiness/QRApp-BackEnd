@@ -57,7 +57,7 @@ async def get_businesses(
     return Response(
         data=businesses,
         pagination=Pagination(
-            current_page=1,
+            current_page=page,
             per_page=limit,
             total_items=await businessService.count(conditions),
         ),
