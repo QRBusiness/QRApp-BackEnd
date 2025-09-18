@@ -19,15 +19,24 @@ class PaymentMethod(str, Enum):
 
 
 class OrderStatus(str, Enum):
+    PREPARING = "Preparing"
     UNPAID = "Unpaid"
     PAID = "Paid"
+
+    def next(self) -> "OrderStatus":
+        flow = {
+            OrderStatus.PREPARING: OrderStatus.UNPAID,
+            OrderStatus.UNPAID: OrderStatus.PAID,
+            OrderStatus.PAID: OrderStatus.PAID,
+        }
+        return flow[self]
 
 
 class Order(Base):
     # General info
     items: List = Field(default_factory=list, description="Danh sách món")
     amount: float = Field(...)
-    status: OrderStatus = Field(default=OrderStatus.UNPAID)
+    status: OrderStatus = Field(default=OrderStatus.PREPARING)
     # Business info
     business: "Link[Business]" = Field(...)  # type: ignore  # noqa: F821
     branch: "Link[Branch]" = Field(...)  # type: ignore  # noqa: F821

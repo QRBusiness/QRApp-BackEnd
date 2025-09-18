@@ -310,6 +310,40 @@ async def get_order(
 
 
 @apiRouter.post(
+    path="/process/{id}",
+    name="Xử lí đơn hàng",
+    response_model=Response[str],
+    dependencies=[
+        Depends(
+            permission_required(
+                permissions=["update.order"],
+            ),
+        ),
+    ],
+)
+async def process_order(
+    request: Request,
+    id: PydanticObjectId,
+):
+    conditions = {
+        "business.$id": PydanticObjectId(request.state.user_scope),
+        "_id": id,
+        "status": OrderStatus.PREPARING,
+    }
+    order = await orderService.find_one(conditions)
+    if order is None:
+        raise HTTP_404_NOT_FOUND("Không tìm thấy đơn hàng")
+    if await orderService.update(
+        id=id,
+        data={
+            "status": order.status.next(),
+        },
+    ):
+        return Response(data=f"Đơn hàng đã chuyển sang trạng thái: {order.status.next().value}")
+    return Response(data="Xử lí đơn hàng thất bại")
+
+
+@apiRouter.post(
     path="/checkout",
     name="Xác nhận đơn hàng",
     response_model=Response[str],
@@ -321,7 +355,7 @@ async def get_order(
         ),
     ],
 )
-async def post_orders(
+async def confirm_orders(
     request: Request,
     token: str = Query(...),
     method: PaymentMethod = Query(
