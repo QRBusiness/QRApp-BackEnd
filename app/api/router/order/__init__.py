@@ -240,6 +240,8 @@ async def view_checkout(
     template: Literal["compact2", "compact", "qr_only", "print"] = Query(
         default="compact", description="Kiểu template QR cần xuất"
     ),
+    phone_number: Optional[int] = Query(default=None),
+    voucher: Optional[PydanticObjectId] = Query(default=None),
 ):
     try:
         payload = ACCESS_JWT.decode(token)

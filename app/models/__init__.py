@@ -7,6 +7,7 @@ from .order import ExtendOrder, Order
 from .payment import Payment
 from .permission import Permission
 from .plan import Plan
+from .point_balance import PointBalance
 from .product import Product
 from .request import Request
 from .service_unit import ServiceUnit
@@ -37,4 +38,5 @@ __all__ = [
     "ExtendOrder",
     "Payment",
     "Plan",
+    "PointBalance",
 ]

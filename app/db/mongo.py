@@ -18,6 +18,7 @@ from app.models import (
     Payment,
     Permission,
     Plan,
+    PointBalance,
     Product,
     Request,
     ServiceUnit,
@@ -92,5 +93,6 @@ Mongo = MongoDB(
         Payment,
         Plan,
         ExtendOrder,
+        PointBalance,
     ],
 )
