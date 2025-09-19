@@ -7,6 +7,7 @@ from .order import extendOrderService, orderService
 from .payment import paymentService
 from .permission import permissionService
 from .plan import planService
+from .point_balance import pointService
 from .product import productService
 from .request import requestService
 from .service_unit import unitService
@@ -29,4 +30,5 @@ __all__ = [
     "paymentService",
     "planService",
     "extendOrderService",
+    "pointService",
 ]

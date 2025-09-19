@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from beanie import Link
+from beanie import Link, PydanticObjectId
 from pydantic import BaseModel, Field
 
 from app.models import Area, Branch, Business, Plan, Request, ServiceUnit, User
@@ -74,3 +74,9 @@ class ExtenOrderResponse(BaseModel):
 class CheckoutOrder(BaseModel):
     orders: List[MinimumOrderResponse]
     qr_code: str
+
+
+class OrderSummary(BaseModel):
+    orders: List[PydanticObjectId]
+    phone_number: Optional[str] = None
+    voucher: Optional[PydanticObjectId] = None

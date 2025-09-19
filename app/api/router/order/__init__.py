@@ -23,12 +23,14 @@ from app.schema.order import (
     MinimumOrderResponse,
     OrderResponse,
     OrderStatus,
+    OrderSummary,
     OrderUpdate,
     PaymentMethod,
     Report,
 )
+from app.schema.point_balance import PointBalanceCreate, PointBalanceUpdate
 from app.schema.service_unit import ServiceUnitResponse
-from app.service import orderService, paymentService, productService
+from app.service import orderService, paymentService, pointService, productService
 
 apiRouter = APIRouter(
     prefix="/orders",
@@ -240,8 +242,6 @@ async def view_checkout(
     template: Literal["compact2", "compact", "qr_only", "print"] = Query(
         default="compact", description="Kiểu template QR cần xuất"
     ),
-    phone_number: Optional[int] = Query(default=None),
-    voucher: Optional[PydanticObjectId] = Query(default=None),
 ):
     try:
         payload = ACCESS_JWT.decode(token)
@@ -379,6 +379,28 @@ async def confirm_orders(
                     ),
                     session=session,
                 )
+            if phone := payload.get("phone"):
+                if point := await pointService.find_one(
+                    conditions={
+                        "phone": phone,
+                        "business.$id": PydanticObjectId(request.state.user_scope),
+                    },
+                    session=session,
+                ):
+                    await pointService.update(
+                        id=point.id,
+                        data=PointBalanceUpdate(
+                            balance=payload.get("reward") + point.balance,
+                        ),
+                    )
+                else:
+                    await pointService.insert(
+                        data=PointBalanceCreate(
+                            phone=phone,
+                            balance=payload.get("reward"),
+                            business=PydanticObjectId(request.state.user_scope),
+                        )
+                    )
         return Response(data="Đơn hàng đã được xử lí")
     except ExpiredSignatureError as e:
         raise HTTP_400_BAD_REQUEST("Liên kết thanh toán đã hết hạn. Vui lòng tạo lại phiên thanh toán mới.") from e
@@ -398,11 +420,11 @@ async def confirm_orders(
 )
 async def gen_qr_for_orders(
     request: Request,
-    orders: List[PydanticObjectId],
+    data: OrderSummary,
 ):
     orders = await orderService.find_many(
         conditions={
-            "_id": {"$in": orders},
+            "_id": {"$in": data.orders},
             "business.$id": PydanticObjectId(request.state.user_scope),
             "status": OrderStatus.UNPAID,
         }
@@ -414,6 +436,8 @@ async def gen_qr_for_orders(
         "business": request.state.user_scope,
         "branch": request.state.user_branch,
         "action": "checkout",
+        "phone": data.phone_number,
+        "reward": sum([order.amount for order in orders]) / 1000,
     }
     token = ACCESS_JWT.encode(
         payload=payload,
