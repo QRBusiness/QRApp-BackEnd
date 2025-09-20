@@ -24,6 +24,7 @@ from app.models import (
     ServiceUnit,
     SubCategory,
     User,
+    Voucher,
 )
 from app.schema.user import Administrator
 from app.service import permissionService, userService
@@ -94,5 +95,6 @@ Mongo = MongoDB(
         Plan,
         ExtendOrder,
         PointBalance,
+        Voucher,
     ],
 )

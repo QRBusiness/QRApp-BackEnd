@@ -12,6 +12,7 @@ from .product import Product
 from .request import Request
 from .service_unit import ServiceUnit
 from .user import User
+from .voucher import Voucher
 
 Business.model_rebuild()
 User.model_rebuild()
@@ -39,4 +40,5 @@ __all__ = [
     "Payment",
     "Plan",
     "PointBalance",
+    "Voucher",
 ]
