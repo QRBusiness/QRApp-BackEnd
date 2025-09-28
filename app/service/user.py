@@ -30,7 +30,7 @@ class UserService(Service[User, UserCreate, UserUpdate]):
             permissions = await permissionService.find_many(
                 conditions={
                     "code": {
-                        "$not": {"$regex": r"\.(businesstype|business|plan|voucher)$"},
+                        "$not": {"$regex": r"\.(businesstype|business|plan)$"},
                     },
                 },
                 session=session,
