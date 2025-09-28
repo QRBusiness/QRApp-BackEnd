@@ -31,10 +31,16 @@ apiRouter = APIRouter(
 )
 async def get_vouchers(
     request: Request,
+    min_points: float = Query(default=0),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
-    conditions = {"business.$id": PydanticObjectId(request.state.user_scope)}
+    conditions = {
+        "business.$id": PydanticObjectId(request.state.user_scope),
+        "required_points": {
+            "$gte": min_points,
+        },
+    }
     vouchers = await voucherService.find_many(
         conditions=conditions,
         skip=(page - 1) * limit,
