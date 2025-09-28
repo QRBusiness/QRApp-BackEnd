@@ -1,9 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel,Field
-from typing import Optional, Any
-from beanie import PydanticObjectId
-from app.schema import BaseResponse
+from typing import Any, Optional
+
+from pydantic import BaseModel, Field
+
 from app.models.voucher import DiscountType
+
 
 class VoucherCreate(BaseModel):
     name: str = Field(...)
@@ -18,6 +19,7 @@ class VoucherCreate(BaseModel):
     start_date: datetime = Field(default_factory=datetime.now)
     end_date: Optional[datetime] = None
     is_active: bool = Field(default=True)
+
 
 class VoucherUpdate(BaseModel):
     name: Optional[str] = None
