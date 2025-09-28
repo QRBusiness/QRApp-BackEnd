@@ -21,6 +21,7 @@ from app.api.router.product import public_apiRouter as public_productRouter
 from app.api.router.request import apiRouter as requestRouter
 from app.api.router.service_unit import apiRouter as serviceRouter
 from app.api.router.user import apiRouter as userRouter
+from app.api.router.voucher import apiRouter as voucherRouter
 from app.common.api_response import Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
 from app.db import QRCode
@@ -43,6 +44,7 @@ api.include_router(public_productRouter)
 api.include_router(private_productRouter)
 api.include_router(requestRouter)
 api.include_router(orderRouter)
+api.include_router(voucherRouter)
 
 
 # broadcast message

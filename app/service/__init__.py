@@ -12,6 +12,7 @@ from .product import productService
 from .request import requestService
 from .service_unit import unitService
 from .user import userService
+from .voucher import voucherService
 
 __all__ = [
     "userService",
@@ -31,4 +32,5 @@ __all__ = [
     "planService",
     "extendOrderService",
     "pointService",
+    "voucherService",
 ]
