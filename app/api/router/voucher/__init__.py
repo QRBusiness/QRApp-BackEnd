@@ -1,3 +1,5 @@
+from typing import List
+
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Query, Request
 
@@ -5,11 +7,13 @@ from app.api.dependency import login_required, permission_required
 from app.common.api_response import Pagination, Response
 from app.common.http_exception import HTTP_404_NOT_FOUND
 from app.core.config import settings
-from app.schema.voucher import VoucherCreate
-from app.service import voucherService
+from app.models.voucher import DiscountType
+from app.schema.point_balance import PointBalanceResponse
+from app.schema.voucher import VoucherCreate, VoucherResponse
+from app.service import pointService, voucherService
 
 apiRouter = APIRouter(
-    tags=["Voucher"],
+    tags=["Discount - Voucher - Reward"],
     prefix="/voucher",
     dependencies=[
         Depends(login_required),
@@ -18,9 +22,27 @@ apiRouter = APIRouter(
 
 
 @apiRouter.get(
+    path="/points",
+    response_model=Response[PointBalanceResponse],
+)
+async def get_points(
+    request: Request,
+    phone: str = Query(...),
+):
+    balance = await pointService.find_one(
+        conditions={
+            "business.$id": PydanticObjectId(request.state.user_scope),
+            "phone": phone,
+        },
+        projection_model=PointBalanceResponse,
+    )
+    return Response(data=balance)
+
+
+@apiRouter.get(
     path="",
     name="Danh sách khuyến mãi",
-    response_model=Response,
+    response_model=Response[List[VoucherResponse]],
     dependencies=[
         Depends(
             permission_required(
@@ -32,6 +54,8 @@ apiRouter = APIRouter(
 async def get_vouchers(
     request: Request,
     min_points: float = Query(default=0),
+    active: bool = Query(default=True),
+    discount_type: DiscountType = Query(default=DiscountType.PERCENTAGE),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=settings.PAGE_SIZE, ge=1, le=200),
 ):
@@ -40,11 +64,14 @@ async def get_vouchers(
         "required_points": {
             "$gte": min_points,
         },
+        "is_active": active,
+        "discount_type": discount_type,
     }
     vouchers = await voucherService.find_many(
         conditions=conditions,
         skip=(page - 1) * limit,
         limit=limit,
+        projection_model=VoucherResponse,
     )
     return Response(
         data=vouchers,
@@ -59,7 +86,7 @@ async def get_vouchers(
 @apiRouter.get(
     path="/{id}",
     name="Xem khuyến mãi",
-    response_model=Response,
+    response_model=Response[VoucherResponse],
     dependencies=[
         Depends(
             permission_required(
@@ -78,6 +105,7 @@ async def get_voucher(
     }
     voucher = await voucherService.find_one(
         conditions=conditions,
+        projection_model=VoucherResponse,
     )
     if voucher is None:
         raise HTTP_404_NOT_FOUND("Không tìm thấy khuyến mãi")
@@ -87,7 +115,7 @@ async def get_voucher(
 @apiRouter.post(
     path="",
     name="Tạo khuyến mãi",
-    response_model=Response,
+    response_model=Response[VoucherResponse],
     dependencies=[
         Depends(
             permission_required(

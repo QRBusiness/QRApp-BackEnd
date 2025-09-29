@@ -14,6 +14,6 @@ class PointBalanceUpdate(BaseModel):
     balance: float = Field(...)
 
 
-class MinimalPointBalanceResponse(BaseResponse):
+class PointBalanceResponse(BaseResponse):
     phone: str = Field(...)
     balance: float = Field(...)

@@ -4,6 +4,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from app.models.voucher import DiscountType
+from app.schema import BaseResponse
 
 
 class VoucherCreate(BaseModel):
@@ -34,3 +35,19 @@ class VoucherUpdate(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     is_active: Optional[bool] = None
+
+
+class VoucherResponse(BaseResponse):
+    name: str = Field(...)
+    description: Optional[str] = None
+    conditions: Optional[Any] = None
+    # Các field cơ bản bổ sung
+    required_points: int = Field(...)
+    discount_type: DiscountType = Field(default=DiscountType.PERCENTAGE)
+    discount_value: float = Field(...)
+    discount_max: Optional[float] = None
+    max_uses: Optional[int] = None
+    used_count: int = Field(default=0)
+    start_date: datetime = Field(default_factory=datetime.now)
+    end_date: Optional[datetime] = None
+    is_active: bool = Field(default=True)

@@ -11,12 +11,12 @@ from fastapi import Request
 from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
+from minio.error import S3Error
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.common.api_message import KeyResponse, get_message
-from minio.error import S3Error
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

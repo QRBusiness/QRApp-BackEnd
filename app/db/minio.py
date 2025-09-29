@@ -4,9 +4,10 @@ import uuid
 from mimetypes import guess_type
 from typing import Any, List
 
-from app.core.config import settings
 from minio import Minio
 from minio.deleteobjects import DeleteObject
+
+from app.core.config import settings
 
 
 class MinIO:
