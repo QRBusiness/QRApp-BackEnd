@@ -242,6 +242,17 @@ async def request(
         branch=area.branch.to_dict().get("id"),
         permission="receive.request",
     )
+    await manager.broadcast(
+        message=json.dumps(
+            {
+                "message": f"{data.get("type")} {data.get("reason")}",
+                "request": str(req.id),
+                "data": data.get("data"),
+            }
+        ),
+        business=area.business.to_dict().get("id"),
+        permission="receive.request",
+    )
     return Response(data=req)
 
 
