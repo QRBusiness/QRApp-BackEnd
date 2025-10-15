@@ -466,7 +466,7 @@ async def cancel_order(
         conditions={
             "_id": id,
             "business.$id": PydanticObjectId(request.state.user_scope),
-            "status": OrderStatus.UNPAID,
+            "status": OrderStatus.PREPARING,
             **({"branch.$id": PydanticObjectId(request.state.user_branch)} if request.state.user_branch else {}),
         }
     )
