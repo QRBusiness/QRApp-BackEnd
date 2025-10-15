@@ -139,7 +139,7 @@ async def request_extend(
     ],
     response_model=Response[List[ResquestResponse]],
 )
-@limiter(max_request=10)
+@limiter(max_request=60)
 async def get_requests(
     request: Request,
     branch: Optional[PydanticObjectId] = Query(default=None, description="Lọc theo chi nhánh"),
@@ -200,7 +200,7 @@ async def get_requests(
     path="",
     response_model=Response[MinimumResquestResponse],
 )
-@limiter(max_request=10)
+@limiter(max_request=60)
 async def request(
     data: RequestCreate,
     request: Request,
