@@ -200,7 +200,7 @@ async def get_requests(
     path="",
     response_model=Response[MinimumResquestResponse],
 )
-@limiter(max_request=60)
+@limiter(max_request=120)
 async def request(
     data: RequestCreate,
     request: Request,

@@ -287,7 +287,7 @@ async def put_user(
     return Response(data=user)
 
 
-@apiRouter.put(
+@apiRouter.post(
     path="/active/{id}",
     name="Mở/Khóa người dùng/nhân viên",
     response_model=Response[UserResponse],
