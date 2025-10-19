@@ -321,5 +321,6 @@ async def lock_unlock_user(
             },
         )
         task.add_task(remove_session, str(id))
+        await user.fetch_link("branch")
         return Response(data=user)
     raise HTTP_403_FORBIDDEN(get_message(KeyResponse.PERMISSION_DENIED))
